@@ -1,0 +1,33 @@
+dataset:
+  Training_dataset: ./Requirements/meta_dataset.csv
+  Negative_dataset: G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test\Control dataset.txt
+  Train_Round: 1                  #The number of cross-validations
+  k_fold: 3
+  data_output: G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test\KFolddata
+
+Train:
+  random_seed: 888
+
+  Meta_learning:
+    Sampling:
+      batch_size: 1
+      sample_shuffle: True
+    
+    Model_parameter:
+      num_of_tasks: 208
+      meta_lr: 0.001
+      inner_loop_lr: 0.01
+      inner_update_step: 3
+      inner_fine_tuning: 3
+      num_of_index: 3
+      len_of_index: 3
+      len_of_embedding: 75
+      regular_coefficient: 0
+      device: cuda
+
+    Trainer_parameter:
+      epoch: 500
+  
+  Disentanglement_distillation:
+    Trainer_parameter:
+      epoch: 800
