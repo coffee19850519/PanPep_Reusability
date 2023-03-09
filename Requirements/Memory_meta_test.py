@@ -106,7 +106,10 @@ class Memory(nn.Module):
         return w
 
     def reset(self):
-        self.content_memory.data = self.initial_state.data.cuda() #TODO
+        if torch.cuda.is_available():
+            self.content_memory.data = self.initial_state.data.cuda()
+        else:
+            self.content_memory.data = self.initial_state.data.cpu()
 
     def size(self):
         return self.C, self.R, self.V
@@ -161,7 +164,10 @@ class Memory_module(nn.Module):
         self.writehead = WriteHead(args.C, self.memory)
         self.prev_loss = []
         self.prev_data = []
-        self.models = torch.Tensor().cuda()
+        if torch.cuda.is_available():
+            self.models = torch.Tensor().cuda()
+        else:
+            self.models = torch.Tensor().cpu()
         self.optim = optim.Adam(self.parameters(), lr=5e-4)
 
     def forward(self, index):
@@ -173,7 +179,10 @@ class Memory_module(nn.Module):
         self.memory.reset()
         self.prev_data = []
         self.prev_loss = []
-        self.models = torch.Tensor().cuda()
+        if torch.cuda.is_available():
+            self.models = torch.Tensor().cuda()
+        else:
+            self.models = torch.Tensor().cpu()
 
     def reinitialization(self):
         # the memory module parameter reinitialization
@@ -214,7 +223,10 @@ class Memory_Meta(nn.Module):
         # self.meta_optim = optim.Adam(self.net.parameters(), lr=self.meta_lr)
         self.prev_loss = []
         self.prev_data = []
-        self.models = torch.Tensor().cuda()
+        if torch.cuda.is_available():
+            self.models = torch.Tensor().cuda()
+        else:
+            self.models = torch.Tensor().cpu()
 
     def clip_grad_by_norm_(self, grad, max_norm):
         """
@@ -243,7 +255,10 @@ class Memory_Meta(nn.Module):
     def reset(self):
         self.prev_data = []
         self.prev_loss = []
-        self.models = torch.Tensor().cuda()
+        if torch.cuda.is_available():
+            self.models = torch.Tensor().cuda()
+        else:
+            self.models = torch.Tensor().cpu()
 
     def finetunning(self, peptide, x_spt, y_spt, x_qry):
         """
