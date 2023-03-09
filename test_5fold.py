@@ -16,8 +16,6 @@ import warnings
 warnings.filterwarnings('ignore')
 
 FilePath = Union[str, "PathLike[str]", pd.DataFrame]
-# Set the 'cuda' used for GPU testing
-# device = torch.device('cuda')
 
 
 def get_num(dict1):
@@ -27,7 +25,7 @@ def get_num(dict1):
     return num
 
 
-def aamapping(TCRSeq, encode_dim):
+def aamapping(TCRSeq, encode_dim, aa_dict):
     """
     this function is used for encoding the TCR sequence
 
@@ -81,7 +79,7 @@ def add_position_encoding(seq):
     return seq
 
 
-def task_embedding(pep, tcr_data):
+def task_embedding(pep, tcr_data, aa_dict):
     """
     this function is used to obtain the task-level embedding
 
@@ -93,47 +91,38 @@ def task_embedding(pep, tcr_data):
     Returns:
         this function returns a peptide embedding, the embedding of support set, the labels of support set and the embedding of query set
     """
-
     # Obtain the TCRs of support set
     spt_TCRs = tcr_data[0]
-
     # Obtain the TCR labels of support set
     ypt = tcr_data[1]
-
     # Initialize the size of the Tensor for the support set and labels
     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
     support_y = np.zeros((1, len(ypt)), dtype=np.int)
     peptides = torch.FloatTensor(1, 75)
-
     # Determine whether there is a query set based on the length of input param2
     if len(tcr_data) > 2:
         qry_TCRs = tcr_data[2]
     else:
         qry_TCRs = ['None']
-
     # Initialize the size of the Tensor for the query set
     query_x = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
-
     # Encoding for the peptide sequence
-    peptide_embedding = add_position_encoding(aamapping(pep, 15))
-
+    peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
     # Put the embedding of support set, labels and peptide embedding into the initialized tensor
     temp = torch.Tensor()
     for j in spt_TCRs:
-        temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
+        temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25, aa_dict))]).unsqueeze(0)])
     support_x[0] = temp
     support_y[0] = np.array(ypt)
     peptides[0] = peptide_embedding.flatten()
-
     # Put the embedding of query set into the initialized tensor
     temp = torch.Tensor()
     if len(tcr_data) > 2:
         for j in qry_TCRs:
-            temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
+            temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25, aa_dict))]).unsqueeze(0)])
         query_x[0] = temp
     else:
         query_x[0] = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
-
     return peptides, support_x, torch.LongTensor(support_y), query_x
 
 
@@ -223,14 +212,14 @@ def change_dict2test_struct(ori_dict, HealthyTCRFile, k_shot=2, ratio=1):
     return F_data
 
 
-def test_5fold_few_shot(model, test_data, output_file):
+def test_5fold_few_shot(model, test_data, output_file, aa_dict, device):
     '''
     Few-shot test. Store the results in a csv.
     '''
     ends = []
     for i in test_data:
         # Convert the input into the embeddings
-        peptide_embedding, x_spt, y_spt, x_qry = task_embedding(i, test_data[i])
+        peptide_embedding, x_spt, y_spt, x_qry = task_embedding(i, test_data[i], aa_dict)
         # Support set is used for fine-tune the model and the query set is used to test the performance
         end = model.finetunning(peptide_embedding[0].to(device), x_spt[0].to(device), y_spt[0].to(device), x_qry[0].to(device))
         ends += list(end[0])
@@ -244,12 +233,12 @@ def test_5fold_few_shot(model, test_data, output_file):
     output.to_csv(output_file, index=False)
 
 
-def test_5fold_zero_shot(model, test_data, output_file):
+def test_5fold_zero_shot(model, test_data, output_file, aa_dict, device):
     '''
     Zero-shot test. Store the results in a csv.
     '''
 
-    def task_embedding(pep, tcr_data):
+    def task_embedding(pep, tcr_data, aa_dict):
         """
         this function is used to obtain the task-level embedding for the zero-shot setting
 
@@ -268,11 +257,11 @@ def test_5fold_zero_shot(model, test_data, output_file):
         query_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
         peptides = torch.FloatTensor(1, 75)
         # Encoding for the peptide sequence
-        peptide_embedding = add_position_encoding(aamapping(pep, 15))
+        peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
         # Put the embedding of query TCRs and peptide into the initialized tensor
         temp = torch.Tensor()
         for j in spt_TCRs:
-            temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
+            temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25, aa_dict))]).unsqueeze(0)])
         query_x[0] = temp
         peptides[0] = peptide_embedding.flatten()
         return peptides, query_x
@@ -282,7 +271,7 @@ def test_5fold_zero_shot(model, test_data, output_file):
     for i in test_data:
         # Convert the input into the embeddings
         all_test_data = test_data[i][0] + test_data[i][2]
-        peptide_embedding, x_spt = task_embedding(i, all_test_data)
+        peptide_embedding, x_spt = task_embedding(i, all_test_data, aa_dict)
         # Memory block is used for predicting the binding scores of the unseen peptide-TCR pairs
         start = model.meta_forward_score(peptide_embedding.to(device), x_spt.to(device))
         starts += list(torch.Tensor.cpu(start[0]).numpy())
@@ -355,5 +344,5 @@ if __name__ == '__main__':
             F_data = change_dict2test_struct(get_peptide_tcr(test_data, 'peptide', 'binding_TCR'), HealthyTCRFile=os.path.join(project_path, data_config['dataset']['Negative_dataset']), ratio=1)
             print('Support size:', sum([len(j) for j in (F_data[k][0] for k in list(F_data.keys()))]), 'Query size:', sum([len(j) for j in (F_data[k][2] for k in list(F_data.keys()))]))
             model = get_model(args, mdoel_config, data_config, model_path=os.path.join(round_dir, kfold_dir), device=device)
-            test_5fold_few_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Few-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))
-            test_5fold_zero_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Zero-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))
+            test_5fold_few_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Few-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'), aa_dict=aa_dict, device=device)
+            test_5fold_zero_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Zero-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'), aa_dict=aa_dict, device=device)
