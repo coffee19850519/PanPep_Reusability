@@ -17,7 +17,7 @@ warnings.filterwarnings('ignore')
 
 FilePath = Union[str, "PathLike[str]", pd.DataFrame]
 # Set the 'cuda' used for GPU testing
-device = torch.device('cuda')
+# device = torch.device('cuda')
 
 
 def get_num(dict1):
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     # load the cofig file
     config_file_path = os.path.join(os.path.abspath(''), 'Configs', 'TrainingConfig.yaml')
     data_config = load_config(config_file_path)
-
+    device = torch.device(data_config['Train']['Meta_learning']['Model_parameter']['device'])
     # Load the Atchley_factors for encoding the amino acid
     aa_dict = joblib.load(os.path.join(eval(data_config['Project_path']), eval(data_config['dataset']['aa_dict'])))
 
