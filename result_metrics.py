@@ -59,16 +59,19 @@ def get_metrics(result_path, label_path):
 
 
 if __name__ == '__main__':
-    project_path = r'G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test' #TODO
-    data_config = load_config(os.path.join(project_path, 'Configs', 'TrainingConfig.yaml'))
+    # load the cofig file
+    config_file_path = os.path.join(os.path.abspath(''), 'Configs', 'TrainingConfig.yaml')
+    data_config = load_config(config_file_path)
+
+    project_path = eval(data_config['Project_path'])
     Round = data_config['dataset']['Train_Round']
     kfold = data_config['dataset']['k_fold']
     data_output = data_config['dataset']['data_output']
     for round in range(1, Round + 1):
         F_roc_list, F_pr_list, Z_roc_list, Z_pr_list = [], [], [], []
-        for k in range(2, kfold + 1):
-            F_result_path = pd.read_csv(project_path + '\Round' + str(round) + '\kfold' + str(k) + '\Few-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv') #TODO
-            Z_result_path = pd.read_csv(project_path + '\Round' + str(round) + '\kfold' + str(k) + '\Zero-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv') #TODO
+        for k in range(data_config['dataset']['current_fold'][0], data_config['dataset']['current_fold'][1]):
+            F_result_path = pd.read_csv(os.path.join(project_path, 'Round' + str(round), 'kfold' + str(k), 'Few-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv'))
+            Z_result_path = pd.read_csv(os.path.join(project_path, 'Round' + str(round), 'kfold' + str(k), 'Zero-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv'))
             y_label_path = pd.read_csv(os.path.join(project_path, data_output, 'kfold' + str(k), 'KFold_' + str(k) + '_test.csv'))
             F_roc, F_pr = get_metrics(F_result_path, y_label_path)
             F_roc_list.append(F_roc)
@@ -76,9 +79,10 @@ if __name__ == '__main__':
             Z_roc, Z_pr = get_metrics(Z_result_path, y_label_path)
             Z_roc_list.append(Z_roc)
             Z_pr_list.append(Z_pr)
-            print(F_roc, F_pr, Z_roc, Z_pr)
+            print('Round:', round, 'K:', k, '\n--Few-shot: ROC-AUC', F_roc, 'PR-AUC', F_pr, '\n--Zero-shot: ROC-AUC', Z_roc, 'PR-AUC', Z_pr)
         mean_F_roc = sum(F_roc_list) / len(F_roc_list)
         mean_F_pr = sum(F_pr_list) / len(F_pr_list)
         mean_Z_roc = sum(Z_roc_list) / len(Z_roc_list)
         mean_Z_pr = sum(Z_pr_list) / len(Z_pr_list)
-        print(mean_F_roc, mean_F_pr, mean_Z_roc, mean_Z_pr)
+        print('Round:', round, 'average', '\n--Few-shot: ROC-AUC', mean_F_roc, 'PR-AUC', mean_F_pr, '\n--Zero-shot: ROC-AUC', mean_Z_roc, 'PR-AUC', mean_Z_pr)
+

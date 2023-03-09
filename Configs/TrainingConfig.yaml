@@ -1,29 +1,31 @@
+Project_path: os.path.abspath("")
 dataset:
-  Training_dataset: ./Requirements/meta_dataset.csv
-  Negative_dataset: G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test\Control dataset.txt
-  Train_Round: 1                  #The number of cross-validations
-  k_fold: 3
-  data_output: G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test\KFolddata
+  Training_dataset: os.path.join('Requirements', 'meta_dataset.csv')
+  Negative_dataset: Control_dataset.txt
+  aa_dict: os.path.join('Requirements', 'dic_Atchley_factors.pkl')
+  Train_Round: 1 #The number of cross-validations
+  k_fold: 5 # fold times
+  current_fold: [1, 6] # current fold (2, 3): fold2; (2, 4): fold2, fold3
+  data_output: KFolddata # KFold data save path
 
 Train:
   random_seed: 888
 
   Meta_learning:
     Sampling:
-      batch_size: 1
+      batch_size: 4
       sample_shuffle: True
     
     Model_parameter:
-      num_of_tasks: 208
-      meta_lr: 0.001
-      inner_loop_lr: 0.01
-      inner_update_step: 3
-      inner_fine_tuning: 3
-      num_of_index: 3
-      len_of_index: 3
-      len_of_embedding: 75
-      regular_coefficient: 0
-      device: cuda
+      meta_lr: 0.001  # Meta-level outer learning rate
+      inner_loop_lr: 0.01  # Task-level inner update learning rate
+      inner_update_step: 3  # Task-level inner update steps
+      inner_fine_tuning: 3  # Update steps for finetunning
+      num_of_index: 3  # Peptide clustering number
+      len_of_index: 3  # Peptide Index matrix vector length
+      len_of_embedding: 75  # Peptide embedding length
+      regular_coefficient: 0  # The regular coefficient
+      device: cuda  # device
 
     Trainer_parameter:
       epoch: 500

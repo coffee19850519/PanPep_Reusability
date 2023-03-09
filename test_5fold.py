@@ -9,7 +9,7 @@ from typing import Union, List
 from pathlib import Path
 from Requirements.Memory_meta_test import Memory_Meta
 from Requirements.Memory_meta_test import Memory_module
-from meta_distillation_training import load_config
+from meta_distillation_training import load_config, Args
 
 import warnings
 
@@ -25,19 +25,6 @@ def get_num(dict1):
     for k, v in dict1.items():
         num += len(v)
     return num
-
-
-class Args:
-    def __init__(self, C, L, R, update_lr, update_step_test):
-        self.C = C
-        self.L = L
-        self.R = R
-        self.update_lr = update_lr
-        self.update_step_test = update_step_test
-
-
-# Load the Atchley_factors for encoding the amino acid
-aa_dict = joblib.load(Path(r"G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test\Requirements\dic_Atchley_factors.pkl")) #TODO
 
 
 def aamapping(TCRSeq, encode_dim):
@@ -185,7 +172,7 @@ def get_peptide_tcr(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColume
     return PepTCRdict
 
 
-def load_control_set(HealthyTCRFile='.\Control_dataset.txt'): #TODO
+def load_control_set(HealthyTCRFile):
     '''
     # load the control TCR set as negative.
     Args:
@@ -194,14 +181,7 @@ def load_control_set(HealthyTCRFile='.\Control_dataset.txt'): #TODO
     Returns:
 
     '''
-    HealthyTCR = []
-    f = open(HealthyTCRFile) #TODO: use pd.loadtxt() instead
-    lines = f.readlines()
-    f.close()
-    for line in lines:
-        HealthyTCR.append(line.strip())
-
-    HealthyTCR = np.array(HealthyTCR)
+    HealthyTCR = np.loadtxt(HealthyTCRFile, dtype=str)
     return HealthyTCR
 
 
@@ -224,7 +204,7 @@ def change_dict2test_struct(ori_dict, HealthyTCRFile, k_shot=2, ratio=1):
     for i, j in ori_dict.items():
         if i not in F_data:
             F_data[i] = [[], [], [], []]
-        selected_spt_idx = np.random.choice(len(j), k_shot, replace=False)  # replace表示是否会取到相同的值，默认为True
+        selected_spt_idx = np.random.choice(len(j), k_shot, replace=False)
         for idx in selected_spt_idx:  # positive support
             F_data[i][0].append(j[idx])
             F_data[i][1].append(1)
@@ -236,7 +216,6 @@ def change_dict2test_struct(ori_dict, HealthyTCRFile, k_shot=2, ratio=1):
         for query_idx in range(len(j)):  # positive query
             if (query_idx not in selected_spt_idx) and (j[query_idx] not in F_data[i][0]):
                 F_data[i][2].append(j[query_idx])
-        # selected_query_idx = np.random.choice(len(HealthyTCR), len(F_data[i][2]))  # negative query
         selected_query_idx = np.random.choice(len(HealthyTCR), int((len(j) - k_shot) * ratio), replace=False)
         selected_query_TCRs = HealthyTCR[selected_query_idx]
         for query_TCR in selected_query_TCRs:
@@ -283,7 +262,8 @@ def test_5fold_zero_shot(model, test_data, output_file):
             this function returns a peptide embedding and the embedding of query TCRs
         """
         # Obtain the TCRs of support set
-        spt_TCRs = tcr_data[2]
+        # spt_TCRs = tcr_data[2]
+        spt_TCRs = tcr_data
         # Initialize the size of the Tensor for the query set and peptide encoding
         query_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
         peptides = torch.FloatTensor(1, 75)
@@ -301,7 +281,8 @@ def test_5fold_zero_shot(model, test_data, output_file):
     starts = []
     for i in test_data:
         # Convert the input into the embeddings
-        peptide_embedding, x_spt = task_embedding(i, test_data[i])
+        all_test_data = test_data[i][0] + test_data[i][2]
+        peptide_embedding, x_spt = task_embedding(i, all_test_data)
         # Memory block is used for predicting the binding scores of the unseen peptide-TCR pairs
         start = model.meta_forward_score(peptide_embedding.to(device), x_spt.to(device))
         starts += list(torch.Tensor.cpu(start[0]).numpy())
@@ -309,17 +290,40 @@ def test_5fold_zero_shot(model, test_data, output_file):
     output_peps = []
     output_tcrs = []
     for i in test_data:
-        output_peps += [i] * len(test_data[i][2])
-        output_tcrs += test_data[i][2]
+        all_test_data = test_data[i][0] + test_data[i][2]
+        output_peps += [i] * len(all_test_data)
+        output_tcrs += all_test_data
     # Store the predicted result and output the result as .csv file
     output = pd.DataFrame({'Peptide': output_peps, 'CDR3': output_tcrs, 'Score': starts})
     output.to_csv(output_file, index=False)
 
 
+def get_model(args, mdoel_config, data_config, model_path, device=device):
+    '''
+    get model
+    '''
+    # Initialize a new model
+    model = Memory_Meta(args, mdoel_config).to(device)
+    # Load the pretrained model
+    model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt')))
+    # Load the memory block
+    if data_config['Train']['Meta_learning']['Model_parameter']['device'] == 'cuda':
+        model.Memory_module = Memory_module(args, model.meta_Parameter_nums).cuda()
+    else:
+        model.Memory_module = Memory_module(args, model.meta_Parameter_nums).cpu()
+    content = joblib.load(os.path.join(model_path, "Content_memory.pkl"))
+    query = joblib.load(os.path.join(model_path, "Query.pkl"))
+    # Load the content memory matrix and query matrix(read head)
+    model.Memory_module.memory.content_memory = content
+    model.Memory_module.memory.Query.weight = query[0]
+    model.Memory_module.memory.Query.bias = query[1]
+    return model
+
+
 if __name__ == '__main__':
     args = Args(C=3, L=75, R=3, update_lr=0.01, update_step_test=3)
     # This is the model parameters
-    config = [
+    mdoel_config = [
         ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
         ('linear', [5, 5]),
         ('relu', [True]),
@@ -330,35 +334,26 @@ if __name__ == '__main__':
         ('flatten', []),
         ('linear', [2, 608])
     ]
-    project_path = r"G:\OneDrive - University of Missouri\PanPep_reusability\5fold_train-test" #TODO
-    data_config = load_config(os.path.join(project_path, 'Configs', 'TrainingConfig.yaml'))
+    # load the cofig file
+    config_file_path = os.path.join(os.path.abspath(''), 'Configs', 'TrainingConfig.yaml')
+    data_config = load_config(config_file_path)
+
+    # Load the Atchley_factors for encoding the amino acid
+    aa_dict = joblib.load(os.path.join(eval(data_config['Project_path']), eval(data_config['dataset']['aa_dict'])))
+
+    project_path = eval(data_config['Project_path'])
     Round = data_config['dataset']['Train_Round']
     k_fold = data_config['dataset']['k_fold']
     data_output = data_config['dataset']['data_output']
-    for r_idx in range(1, (Round + 1)): #TODO
+    for r_idx in range(1, (Round + 1)):
         print('Testing Round:', r_idx)
-        round_dir = project_path + '\Round' + str(r_idx) #TODO
+        round_dir = os.path.join(project_path, 'Round' + str(r_idx))
         for kfold_dir in os.listdir(round_dir):
             kfold_idx = str(kfold_dir).split('kfold')[-1]
             print('--kfload:', kfold_idx)
-            # test_data = os.path.join(round_dir, kfold_dir, 'Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv')
             test_data = os.path.join(project_path, data_output, 'kfold' + kfold_idx, 'KFold_' + kfold_idx + '_test.csv')
-            F_data = change_dict2test_struct(get_peptide_tcr(test_data, 'peptide', 'binding_TCR'), HealthyTCRFile=project_path + '\Control dataset.txt', ratio=1) #TODO
+            F_data = change_dict2test_struct(get_peptide_tcr(test_data, 'peptide', 'binding_TCR'), HealthyTCRFile=os.path.join(project_path, data_config['dataset']['Negative_dataset']), ratio=1)
             print('Support size:', sum([len(j) for j in (F_data[k][0] for k in list(F_data.keys()))]), 'Query size:', sum([len(j) for j in (F_data[k][2] for k in list(F_data.keys()))]))
-            # Initialize a new model
-            model = Memory_Meta(args, config).to(device)
-            # The path of the trained model
-            Path = os.path.join(round_dir, kfold_dir, 'model.pt')
-            print(Path)
-            # Load the pretrained model
-            model.load_state_dict(torch.load(Path))
-            # Load the memory block
-            model.Memory_module = Memory_module(args, model.meta_Parameter_nums).cuda()
-            content = joblib.load(os.path.join(round_dir, kfold_dir, "Content_memory.pkl"))
-            query = joblib.load(os.path.join(round_dir, kfold_dir, "Query.pkl"))
-            # Load the content memory matrix and query matrix(read head)
-            model.Memory_module.memory.content_memory = content
-            model.Memory_module.memory.Query.weight = query[0]
-            model.Memory_module.memory.Query.bias = query[1]
+            model = get_model(args, mdoel_config, data_config, model_path=os.path.join(round_dir, kfold_dir))
             test_5fold_few_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Few-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))
             test_5fold_zero_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Zero-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))

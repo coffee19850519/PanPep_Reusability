@@ -1,14 +1,14 @@
-import  torch
-from    torch import nn
-from    torch import optim
-from    torch.nn import functional as F
-from    torch.utils.data import TensorDataset, DataLoader
-from    torch import optim
-import  numpy as np
+import torch
+from torch import nn
+from torch import optim
+from torch.nn import functional as F
+from torch.utils.data import TensorDataset, DataLoader
+from torch import optim
+import numpy as np
 
-from    learner import Learner
-from    copy import deepcopy
-import  argparse
+from learner import Learner
+from copy import deepcopy
+import argparse
 from tensorboardX import SummaryWriter
 from datetime import datetime
 from sklearn.metrics import roc_auc_score
@@ -24,15 +24,16 @@ class ReadHead(nn.Module):
     Returns:
         the similarity weights based on the memory basis, output by the forward function
     """
-    
-    def __init__(self,memory):
-        super(ReadHead,self).__init__()
+
+    def __init__(self, memory):
+        super(ReadHead, self).__init__()
         self.memory = memory
-        
-    def forward(self,peptide):
+
+    def forward(self, peptide):
         q = self.memory.Query(peptide)
         w = self.memory(q)
         return w
+
 
 class WriteHead(nn.Module):
     """
@@ -45,13 +46,13 @@ class WriteHead(nn.Module):
     Returns:
         the forward function of this class is used to write the model into the memory block
     """
-    
-    def __init__(self,C, memory, num_of_tasks):
-        super(WriteHead,self).__init__()
+
+    def __init__(self, C, memory, num_of_tasks):
+        super(WriteHead, self).__init__()
         self.memory = memory
         self.C = C
         # linear layer for transforming the past models into the memory
-        self.model_transform = nn.Linear(num_of_tasks,self.C)
+        self.model_transform = nn.Linear(num_of_tasks, self.C)
         nn.init.xavier_uniform_(self.model_transform.weight, gain=1.4)
         nn.init.normal_(self.model_transform.bias, std=0.01)
 
@@ -78,46 +79,47 @@ class Memory(nn.Module):
     Returns:
         the task-level similarity based on the basis matrix in the memory block, output by the forward function
     """
-    
-    def __init__(self,L,C,R,V,num_task_batch=1):
-        super(Memory,self).__init__()
+
+    def __init__(self, L, C, R, V, num_task_batch=1):
+        super(Memory, self).__init__()
         self.C = C
         self.R = R
         self.V = V
         self.num_task_batch = num_task_batch
-        
+
         # the content memory matrix
-        self.initial_state = torch.ones(C,V) * 1e-6
-        self.register_buffer("content_memory",self.initial_state.data)
-        
+        self.initial_state = torch.ones(C, V) * 1e-6
+        self.register_buffer("content_memory", self.initial_state.data)
+
         # the basis matrix
         self.diognal = torch.eye(C)
-        self.register_buffer("peptide_index",self.diognal.data)
-        
+        self.register_buffer("peptide_index", self.diognal.data)
+
         # the query matrix
-        self.Query = nn.Linear(L,R)
+        self.Query = nn.Linear(L, R)
         nn.init.xavier_uniform_(self.Query.weight, gain=1.4)
         nn.init.normal_(self.Query.bias, std=0.01)
-    def forward(self,query):
-        query = query.view(self.num_task_batch,1,-1)
-        w = F.softmax(F.cosine_similarity(self.peptide_index+1e-16,query+1e-16,dim=-1),dim=1)
+
+    def forward(self, query):
+        query = query.view(self.num_task_batch, 1, -1)
+        w = F.softmax(F.cosine_similarity(self.peptide_index + 1e-16, query + 1e-16, dim=-1), dim=1)
         return w
-    
+
     def reset(self):
         self.content_memory.data = self.initial_state.data.cuda()
-    
+
     def size(self):
         return self.C, self.R, self.V
-    
+
     def readhead(self, w):
-        return torch.matmul(w.unsqueeze(1),self.content_memory).squeeze(1)
-    
-    def writehead(self,w):
+        return torch.matmul(w.unsqueeze(1), self.content_memory).squeeze(1)
+
+    def writehead(self, w):
         self.content_memory = w.T
-        
+
 
 # memory based net parameter reconstruction
-def _split_parameters(x,memory_parameters):
+def _split_parameters(x, memory_parameters):
     """
     This function is used to rebuild the model parameter shape from the parameter vector
     
@@ -128,12 +130,12 @@ def _split_parameters(x,memory_parameters):
     Returns:
         a new model parameter shape from the parameter vector
     """
-    
+
     new_weights = []
     start_index = 0
     for i in range(len(memory_parameters)):
         end_index = np.prod(memory_parameters[i].shape)
-        new_weights.append(x[:,start_index:start_index+end_index].reshape(memory_parameters[i].shape))
+        new_weights.append(x[:, start_index:start_index + end_index].reshape(memory_parameters[i].shape))
         start_index += end_index
     return new_weights
 
@@ -151,17 +153,18 @@ class Memory_module(nn.Module):
         param models: store previous models for disentanglement distillation
         param optim: This is the optimizer for the disentanglement distillation
     """
-    
-    def __init__(self,args,params_num):
-        super(Memory_module,self).__init__()
-        self.memory = Memory(args.L,args.C,args.R,params_num,num_task_batch=1)
+
+    def __init__(self, args, params_num):
+        super(Memory_module, self).__init__()
+        self.memory = Memory(args.L, args.C, args.R, params_num, num_task_batch=1)
         self.readhead = ReadHead(self.memory)
         self.writehead = WriteHead(args.C, self.memory, args.task_num)
         self.prev_loss = []
         self.prev_data = []
         self.models = torch.Tensor().cuda()
         self.optim = optim.Adam(self.parameters(), lr=5e-4)
-    def forward(self,index):
+
+    def forward(self, index):
         r = self.readhead(index)
         return r
 
@@ -171,14 +174,15 @@ class Memory_module(nn.Module):
         self.prev_data = []
         self.prev_loss = []
         self.models = torch.Tensor().cuda()
-        
+
     def reinitialization(self):
         # the memory module parameter reinitialization
         nn.init.xavier_uniform_(self.memory.Query.weight, gain=1.4)
         nn.init.normal_(self.memory.Query.bias, std=0.01)
         nn.init.xavier_uniform_(self.writehead.model_transform.weight, gain=1.4)
         nn.init.normal_(self.writehead.model_transform.bias, std=0.01)
-        
+
+
 class Memory_Meta(nn.Module):
     """
     Meta Learner
@@ -193,7 +197,7 @@ class Memory_Meta(nn.Module):
         param prev_data: store previous data for disentanglement distillation
         param models: store previous models for disentanglement distillation
     """
-    
+
     def __init__(self, args, config):
         super(Memory_Meta, self).__init__()
 
@@ -204,17 +208,17 @@ class Memory_Meta(nn.Module):
         self.update_step_test = args.update_step_test
         self.net = Learner(config)
         self.regular = args.regular
-        
+
         # Count the number of parameters
         tmp = filter(lambda x: x.requires_grad, self.net.parameters())
         self.meta_Parameter_nums = sum(map(lambda x: np.prod(x.shape), tmp))
         self.Memory_module = None
         self.meta_optim = optim.Adam(self.net.parameters(), lr=self.meta_lr)
-        
+
         self.prev_loss = []
         self.prev_data = []
         self.models = torch.Tensor().cuda()
-        
+
     def clip_grad_by_norm_(self, grad, max_norm):
         """
         this is the function for in-place gradient clipping.
@@ -237,13 +241,13 @@ class Memory_Meta(nn.Module):
             for g in grad:
                 g.data.mul_(clip_coef)
 
-        return total_norm/counter
-    
+        return total_norm / counter
+
     def reset(self):
         self.prev_data = []
         self.prev_loss = []
         self.models = torch.Tensor().cuda()
-        
+
     def forward(self, peptide, x_spt, y_spt, x_qry, y_qry):
         """
         this is the function used for updating meta learner by gredient decent
@@ -258,41 +262,39 @@ class Memory_Meta(nn.Module):
         Return:
             the ACC value for all query TCRs in training process
         """
-        
+
         task_num, setsz, h, w = x_spt.size()
         querysz = x_qry.size(1)
-        
+
         # losses_q[i] is the loss on step i
-        losses_q = [0 for _ in range(self.update_step + 1)] 
+        losses_q = [0 for _ in range(self.update_step + 1)]
         corrects = [0 for _ in range(self.update_step + 1)]
 
         memory_parameters = deepcopy(self.net.parameters())
         loss_regular = 0
-        for i in range(task_num):           
-                   
+        for i in range(task_num):
+
             # 1. run the i-th task and compute loss for k=0
             logits = self.net(x_spt[i], vars=None, bn_training=True)
             loss = F.cross_entropy(logits, y_spt[i])
-            
+
             # calculate the grad of net.parameters of which combined weights
-            grad = torch.autograd.grad(loss, self.net.parameters(),create_graph=True)
+            grad = torch.autograd.grad(loss, self.net.parameters(), create_graph=True)
             fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, self.net.parameters())))
-            
-            
+
             # this is the loss and accuracy before first update
             logits_q = self.net(x_qry[i], self.net.parameters(), bn_training=True)
             loss_q = F.cross_entropy(logits_q, y_qry[i])
             losses_q[0] += loss_q
-            
+
             # save the loss of meta learner
             loss_start = loss_q
-            
+
             # calculate the accuracy
             pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
             correct = torch.eq(pred_q, y_qry[i]).sum().item()
             corrects[0] = corrects[0] + correct
-            
-            
+
             # this is the loss and accuracy after the first update
             if self.update_step == 1:
                 # [setsz, nway]
@@ -304,7 +306,7 @@ class Memory_Meta(nn.Module):
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                 correct = torch.eq(pred_q, y_qry[i]).sum().item()
                 corrects[1] = corrects[1] + correct
-                
+
             else:
                 with torch.no_grad():
                     # [setsz, nway]
@@ -315,16 +317,16 @@ class Memory_Meta(nn.Module):
                     pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                     correct = torch.eq(pred_q, y_qry[i]).sum().item()
                     corrects[1] = corrects[1] + correct
-                    
+
                 for k in range(1, self.update_step):
                     # 1. run the i-th task and compute loss for k=1~K-1
                     logits = self.net(x_spt[i], fast_weights, bn_training=True)
                     loss = F.cross_entropy(logits, y_spt[i])
                     # 2. compute grad on theta_pi
-                    grad = torch.autograd.grad(loss, fast_weights,create_graph=True)
+                    grad = torch.autograd.grad(loss, fast_weights, create_graph=True)
                     # 3. theta_pi = theta_pi - train_lr * grad
                     fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, fast_weights)))
-                                      
+
                     logits_q = self.net(x_qry[i], fast_weights, bn_training=True)
                     # loss_q will be overwritten and just keep the loss_q on last update step.
                     loss_q = F.cross_entropy(logits_q, y_qry[i])
@@ -334,27 +336,26 @@ class Memory_Meta(nn.Module):
                         pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
                         correct = torch.eq(pred_q, y_qry[i]).sum().item()  # convert to numpy
                         corrects[k + 1] = corrects[k + 1] + correct
-            
+
             # flatten the network parameters
             with torch.no_grad():
                 tmp = torch.Tensor([]).cuda()
                 for j in fast_weights:
-                    tmp = torch.cat([tmp,j.data.flatten()],dim=0)
-                    
+                    tmp = torch.cat([tmp, j.data.flatten()], dim=0)
+
             self.prev_loss.append(F.softmax(logits_q).data)
-            self.prev_data.append([peptide[i],x_qry[i],y_qry[i]])
-            self.models = torch.cat([self.models,tmp.unsqueeze(0)],dim=0)
+            self.prev_data.append([peptide[i], x_qry[i], y_qry[i]])
+            self.models = torch.cat([self.models, tmp.unsqueeze(0)], dim=0)
 
             # maximization of entropy    
-            loss_regular = loss_q + self.regular*(loss_q-loss_start)
-        
+            loss_regular = loss_q + self.regular * (loss_q - loss_start)
+
             # loss_regular /= task_num
             # optimize theta parameters
             self.meta_optim.zero_grad()
             # loss_q.backward()
             loss_regular.backward()
             self.meta_optim.step()
-        
 
             # update the memory block
         # end of all tasks
@@ -377,11 +378,11 @@ class Memory_Meta(nn.Module):
         Return:
             the binding scores for the TCRs in the query set in the few-shot setting
         """
-        
+
         querysz = x_qry.size(0)
         start = []
         end = []
-        
+
         # in order not to ruin the state of running_mean/variance and bn_weight/bias
         # we finetunning on the copied model instead of self.net
         net = deepcopy(self.net)
@@ -394,57 +395,56 @@ class Memory_Meta(nn.Module):
 
         # the loss and accuracy before first update
         with torch.no_grad():
-            
+
             # predict logits
             logits_q = net(x_qry, net.parameters(), bn_training=False)
-            
+
             # calculate the scores based on softmax
             pred_q = F.softmax(logits_q, dim=1)
-            start.append(pred_q[:,1].cpu().numpy())
-        
+            start.append(pred_q[:, 1].cpu().numpy())
+
         # the loss and accuracy after the first update
         if self.update_step_test == 1:
-            
+
             # predict logits
             logits_q = net(x_qry, fast_weights, bn_training=False)
-            
+
             # calculate the scores based on softmax
             pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
         else:
             with torch.no_grad():
-                
+
                 # predict logits
                 logits_q = net(x_qry, fast_weights, bn_training=False)
-                
+
                 # calculate the scores based on softmax
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
-                
+
             for k in range(1, self.update_step_test):
-                
                 # 1. run the i-th task and compute loss for k=1~K-1
                 logits = net(x_spt, fast_weights, bn_training=True)
                 loss = F.cross_entropy(logits, y_spt)
-                
+
                 # 2. compute grad on theta_pi
                 grad = torch.autograd.grad(loss, fast_weights)
-                
+
                 # 3. theta_pi = theta_pi - train_lr * grad
                 fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, fast_weights)))
-                
+
                 # predict logits
                 logits_q = net(x_qry, fast_weights, bn_training=False)
 
                 with torch.no_grad():
                     # calculate the scores based on softmax
                     pred_q = F.softmax(logits_q, dim=1)
-                
-            end.append(pred_q[:,1].cpu().numpy())
-            
+
+            end.append(pred_q[:, 1].cpu().numpy())
+
         del net
 
         return end
-        
-    def meta_forward_score(self,peptide,x_spt):
+
+    def meta_forward_score(self, peptide, x_spt):
         """
         This function is used to perform the zero-shot predition in the condition where you have peptide, TCRs
         
@@ -457,24 +457,23 @@ class Memory_Meta(nn.Module):
         """
         with torch.no_grad():
             scores = []
-            
+
             # copy the origin model parameters for the baseline parameter shape
             memory_parameters = deepcopy(self.net.parameters())
-            
+
             # predict the binding score based on the basis models in the memory block
             for i in range(len(peptide)):
-                
+
                 # retrieve the memory
                 r = self.Memory_module.readhead(peptide[i])[0]
                 logits = []
-                for m,n in enumerate(self.Memory_module.memory.content_memory):
-                    
+                for m, n in enumerate(self.Memory_module.memory.content_memory):
                     # obtain the basis model
-                    weights_memory = _split_parameters(n.unsqueeze(0),memory_parameters)
-                    logits.append(self.net(x_spt[i], weights_memory,bn_training=False))
-                
+                    weights_memory = _split_parameters(n.unsqueeze(0), memory_parameters)
+                    logits.append(self.net(x_spt[i], weights_memory, bn_training=False))
+
                 # weighted the predicted result
-                pred = sum([r[k]*F.softmax(j) for k,j in enumerate(logits)])
-                scores.append(pred[:,1])
-                
+                pred = sum([r[k] * F.softmax(j) for k, j in enumerate(logits)])
+                scores.append(pred[:, 1])
+
             return scores
