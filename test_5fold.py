@@ -298,7 +298,7 @@ def test_5fold_zero_shot(model, test_data, output_file):
     output.to_csv(output_file, index=False)
 
 
-def get_model(args, mdoel_config, data_config, model_path, device=device):
+def get_model(args, mdoel_config, data_config, model_path, device):
     '''
     get model
     '''
@@ -354,6 +354,6 @@ if __name__ == '__main__':
             test_data = os.path.join(project_path, data_output, 'kfold' + kfold_idx, 'KFold_' + kfold_idx + '_test.csv')
             F_data = change_dict2test_struct(get_peptide_tcr(test_data, 'peptide', 'binding_TCR'), HealthyTCRFile=os.path.join(project_path, data_config['dataset']['Negative_dataset']), ratio=1)
             print('Support size:', sum([len(j) for j in (F_data[k][0] for k in list(F_data.keys()))]), 'Query size:', sum([len(j) for j in (F_data[k][2] for k in list(F_data.keys()))]))
-            model = get_model(args, mdoel_config, data_config, model_path=os.path.join(round_dir, kfold_dir))
+            model = get_model(args, mdoel_config, data_config, model_path=os.path.join(round_dir, kfold_dir), device)
             test_5fold_few_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Few-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))
             test_5fold_zero_shot(model, F_data, output_file=os.path.join(round_dir, kfold_dir, 'Zero-shot_Result_Round_' + str(r_idx) + '_kfold_' + kfold_idx + '_test.csv'))
