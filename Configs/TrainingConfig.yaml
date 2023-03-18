@@ -33,3 +33,9 @@ Train:
   Disentanglement_distillation:
     Trainer_parameter:
       epoch: 800
+  General:
+    epoch: 500
+    Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
+    device: cuda  # device
+    train_batch_size: 128
+    valid_batch_size: 64
