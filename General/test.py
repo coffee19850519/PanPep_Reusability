@@ -65,7 +65,7 @@ for kf_time in range(data_config['dataset']['current_fold'][0], data_config['dat
         if labels[i] != 'Unknown':
             F_data[j][0].append(TCRs[i])
             F_data[j][1].append(labels[i])
-    model_path = os.path.join(os.path.abspath(""), 'KFold_' + str(kf_time) + 'best.pt')
+    model_path = os.path.join(os.path.abspath(""), 'KFold_' + str(kf_time) + '_best.pt')
     model.load_state_dict(torch.load(model_path))
     ends = []
     for i in F_data:
