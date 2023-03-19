@@ -3,10 +3,11 @@ dataset:
   Training_dataset: os.path.join('Requirements', 'meta_dataset.csv')
   Negative_dataset: Control_dataset.txt
   aa_dict: os.path.join('Requirements', 'dic_Atchley_factors.pkl')
-  Train_Round: 1 #The number of cross-validations
+  Train_Round: 5 #The number of cross-validations
   k_fold: 5 # fold times
   current_fold: [1, 6] # current fold (2, 3): fold2; (2, 4): fold2, fold3
   data_output: KFolddata # KFold data save path
+
 
 Train:
   random_seed: 888
@@ -15,7 +16,7 @@ Train:
     Sampling:
       batch_size: 4
       sample_shuffle: True
-    
+
     Model_parameter:
       meta_lr: 0.001  # Meta-level outer learning rate
       inner_loop_lr: 0.01  # Task-level inner update learning rate
@@ -29,13 +30,15 @@ Train:
 
     Trainer_parameter:
       epoch: 500
-  
+
   Disentanglement_distillation:
     Trainer_parameter:
       epoch: 800
+
   General:
     epoch: 500
     Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
     device: cuda  # device
     train_batch_size: 128
     valid_batch_size: 64
+    Test_result_path: test_result
