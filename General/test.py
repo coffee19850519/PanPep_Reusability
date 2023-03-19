@@ -50,6 +50,8 @@ model = Memory_Meta(config).to(device)
 
 model_path = os.path.join(os.path.abspath(""), 'best.pt')
 model.load_state_dict(torch.load(model_path))
+if not os.path.exists(os.path.join(os.path.abspath(""), data_config['Train']['General']['Test_result_path'])):
+    os.makedirs(os.path.join(os.path.abspath(""), data_config['Train']['General']['Test_result_path']))
 for kf_time in range(data_config['dataset']['current_fold'][0], data_config['dataset']['current_fold'][1]):
     genetal_test_path = os.path.join(project_path, data_output, 'kfold' + str(kf_time), 'KFold_' + str(kf_time) + '_test_general_data.csv')
     test_data = pd.read_csv(genetal_test_path)
