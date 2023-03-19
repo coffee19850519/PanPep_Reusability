@@ -78,5 +78,5 @@ if __name__ == '__main__':
 
             if valid_loss.avg < best_loss:
                 best_loss = valid_loss.avg
-                torch.save(model.state_dict(), 'KFold_' + str(kf_time) + 'best.pt')
+                torch.save(model.state_dict(), 'KFold_' + str(kf_time) + '_best.pt')
                 print("Saved Best Model!")
