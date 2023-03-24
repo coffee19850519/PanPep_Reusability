@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import torch
 import joblib
+# from multiprocessing import Pool, cpu_count, Process
+# # 多进程
+# pool = Pool(cpu_count())
 
 from utils import Args, get_peptide_tcr, get_model, Model_config, Device, Project_path, Aa_dict, Train_Round, Train_output_dir, Test_output_dir, Negative_dataset, Zero_test_data, aamapping, add_position_encoding, zero_task_embedding
 
@@ -10,16 +13,19 @@ from utils import Args, get_peptide_tcr, get_model, Model_config, Device, Projec
 def change_dict2test_struct(ori_dict, HealthyTCRFile, ratio=1):
     HealthyTCR = np.loadtxt(HealthyTCRFile, dtype=str)
     F_data = {}
-    n = 0
+    positive = 0
     for i, j in ori_dict.items():
         if i not in F_data:
             F_data[i] = [[], []]
         F_data[i][0].extend(j)
-        selected_query_idx = np.random.choice(len(HealthyTCR), int(len(j) * ratio), replace=False)
-        selected_query_TCRs = HealthyTCR[selected_query_idx]
-        F_data[i][0].extend(selected_query_TCRs)
-        n += 1
-        print(n)
+        positive += len(j)
+    selected_query_idx = np.random.choice(len(HealthyTCR), int(positive * ratio), replace=False)
+    selected_query_TCRs = HealthyTCR[selected_query_idx]
+    befor_num = 0
+    for i, j in ori_dict.items():
+        F_data[i][0].extend(selected_query_TCRs[befor_num: befor_num + len(j)])
+        befor_num += len(j)
+
     return F_data
 
 
