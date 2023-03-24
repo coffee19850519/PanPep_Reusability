@@ -10,4 +10,4 @@
 
 `utils.py`: Common functions and related configurations.
 
-control dataset: https://zenodo.org/record/7544387 ([control dataset url](https://zenodo.org/record/7544387/files/Control dataset.txt?download=1)) (Put it in the root directory of the project.)
+control dataset: https://zenodo.org/record/7544387 ([control dataset url] (https://zenodo.org/record/7544387/files/Control dataset.txt?download=1)) (Put it in the root directory of the project.)
