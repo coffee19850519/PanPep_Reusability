@@ -1,6 +1,7 @@
 Project_path: os.path.abspath("")
 dataset:
   Training_dataset: os.path.join('Requirements', 'meta_dataset.csv')
+  Testing_zero_dataset: os.path.join('Requirements', 'zero_dataset.csv')
   Negative_dataset: Control_dataset.txt
   aa_dict: os.path.join('Requirements', 'dic_Atchley_factors.pkl')
   Train_Round: 5 #The number of cross-validations
@@ -10,7 +11,7 @@ dataset:
 
 
 Train:
-  random_seed: 888
+  Train_output_dir: Results
 
   Meta_learning:
     Sampling:
@@ -42,3 +43,6 @@ Train:
     train_batch_size: 128
     valid_batch_size: 64
     Test_result_path: test_result
+
+Test:
+  Test_output_dir: Test_Results
