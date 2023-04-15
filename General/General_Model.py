@@ -12,7 +12,7 @@ class Memory_Meta(nn.Module):
         self.net = Learner(config)
 
     def forward(self, x_spt, y_spt):
-        net = deepcopy(self.net)
+        net = self.net
         logits = net(x_spt)
         loss = F.cross_entropy(logits, y_spt)
         return loss
