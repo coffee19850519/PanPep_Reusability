@@ -67,14 +67,21 @@ if __name__ == '__main__':
     Z_F_xxx: zero-shot model used in few-shot data
     Z_xxx: zero-shot model used in zero-shot data
     """
-    args = Args(f=True, zf=True, z=True)
+    few_shot_k_shot = 2  # 5, 4, 3, 2
+    few_shot_k_query = 3
+    few_shot_U_limit = '10'  # None
+    args = Args(f=True, zf=False, z=False)
     for round in range(1, Train_Round + 1):
         F_roc_list, F_pr_list, Z_F_roc_list, Z_F_pr_list, Z_roc_list, Z_pr_list = [], [], [], [], [], []
         for k in range(Data_config['dataset']['current_fold'][0], Data_config['dataset']['current_fold'][1]):
             if args.f:
                 # few-shot result metrics
+                # F_result_path = pd.read_csv(os.path.join(Project_path, Train_output_dir, 'Round' + str(round), 'kfold' + str(k),
+                #                                          Test_output_dir, 'Few-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv'))
                 F_result_path = pd.read_csv(os.path.join(Project_path, Train_output_dir, 'Round' + str(round), 'kfold' + str(k),
-                                                         Test_output_dir, 'Few-shot_Result_Round_' + str(round) + '_kfold_' + str(k) + '_test.csv'))
+                                                         Test_output_dir, 'Few-shot_Result_Round_' + str(round) + '_kfold_' + str(k) +
+                                                         '_kshot' + str(few_shot_k_shot) + '_kquery' + str(few_shot_k_query) +
+                                                         '_ulimit_' + few_shot_U_limit + '_test.csv'))
                 F_y_label_path = pd.read_csv(os.path.join(Project_path, Data_output, 'kfold' + str(k), 'KFold_' + str(k) + '_test.csv'))
                 F_roc, F_pr = get_metrics(F_result_path, F_y_label_path)
                 F_roc_list.append(F_roc)
