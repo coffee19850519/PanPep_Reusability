@@ -7,6 +7,11 @@ import os
 import torch
 import joblib
 
+from collections import Counter
+import weakref
+from collections import OrderedDict
+from typing import Any, Callable
+
 from Requirements.Memory_meta_test import Memory_Meta
 from Requirements.Memory_meta_test import Memory_module
 
@@ -32,7 +37,7 @@ def load_csv_like_file(file_name: FilePath, csv_encoding: str = 'utf-8', sep=','
     return csv_file
 
 
-def get_peptide_tcr(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColumeName: str = 'Alpha CDR3', csv_encoding: str = 'utf-8', sep=','):
+def get_peptide_tcr(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColumeName: str = 'Alpha CDR3', LabelColumeName: str = None, csv_encoding: str = 'utf-8', sep=','):
     '''
     Obtain peptide and tcr based on the column name and return them in dictionary
     :param src_csv:
@@ -46,10 +51,58 @@ def get_peptide_tcr(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColume
     PepTCRdict = {}
     for idx, pep in enumerate(src_csv[PepColumnName]):
         if pep not in PepTCRdict:
-            PepTCRdict[pep] = []
-        if (type(src_csv[CdrColumeName][idx]) == str) and (src_csv[CdrColumeName][idx] not in PepTCRdict[pep]):
-            PepTCRdict[pep].append(src_csv[CdrColumeName][idx])
+            if not LabelColumeName:
+                PepTCRdict[pep] = []
+            else:
+                PepTCRdict[pep] = [[], []]
+        if not LabelColumeName:
+            if (type(src_csv[CdrColumeName][idx]) == str) and (src_csv[CdrColumeName][idx] not in PepTCRdict[pep]):
+                PepTCRdict[pep].append(src_csv[CdrColumeName][idx])
+        else:
+            if (type(src_csv[CdrColumeName][idx]) == str) and (src_csv[CdrColumeName][idx] not in PepTCRdict[pep][0]):
+                PepTCRdict[pep][0].append(src_csv[CdrColumeName][idx])
+                PepTCRdict[pep][1].append(src_csv[LabelColumeName][idx])
     return PepTCRdict
+
+
+def add_negative_data(positive_data, negative_data, ratio=1):
+    '''
+    将正、负样本加入新的csv中（个数与正样本一致）
+    Args:
+        positive_data:
+        negative_data:
+
+    Returns:
+
+    '''
+    if type(negative_data) is str:
+        negative_data = np.loadtxt(negative_data, dtype=str)
+    peptide_ = Counter(positive_data['peptide'])
+    negative_ = {}
+    # print('All:', len(peptide_))
+    positive = 0
+    for pep, num in peptide_.items():
+        negative_[pep] = [[], []]
+        negative_[pep][0].extend(positive_data[positive_data['peptide'] == pep]['binding_TCR'].array)
+        negative_[pep][1].extend(positive_data[positive_data['peptide'] == pep]['label'].array)
+        positive += num
+
+    selected_query_idx = np.random.choice(len(negative_data), int(positive * ratio), replace=False)
+    selected_query_TCRs = negative_data[selected_query_idx]
+    befor_num = 0
+    for i, j in negative_.items():
+        pep_num = len(j[0])
+        negative_[i][0].extend(selected_query_TCRs[befor_num: befor_num + pep_num])
+        negative_[i][1].extend([0] * pep_num)
+        befor_num += pep_num
+
+    all_data_dict = {'peptide': [], 'binding_TCR': [], 'label': []}
+    for key, val in negative_.items():
+        all_data_dict['peptide'].extend([key] * len(val[0]))
+        all_data_dict['binding_TCR'].extend(val[0])
+        all_data_dict['label'].extend(val[1])
+    all_data_dict = pd.DataFrame(all_data_dict)
+    return all_data_dict
 
 
 class Args:
@@ -69,15 +122,12 @@ class Args:
 
 class MLogger:
     level_dict = {0: logging.DEBUG, 1: logging.INFO, 2: logging.WARNING}
-    formatter = logging.Formatter(
-        "[%(asctime)s][%(filename)s][line:%(lineno)d][%(levelname)s] %(message)s"
-    )
+    formatter = logging.Formatter("[%(asctime)s][%(filename)s][%(levelname)s] %(message)s")
 
-    def __init__(self, filename, verbosity=1):
-        self.logger = logging.getLogger(__name__)
-        logging.Logger.manager.loggerDict.pop(__name__)
+    def __init__(self, filename, verbosity=1, name=__name__):
+        self.logger = logging.getLogger(name)
+        # logging.Logger.manager.loggerDict.pop(__name__)
         self.logger.handlers = []
-        self.logger.removeHandler(self.logger.handlers)
         self.filename = filename
         self.verbosity = verbosity
         if not self.logger.handlers:
@@ -91,7 +141,6 @@ class MLogger:
 
     def info(self, message=None):
         self.logger.info(message)
-        self.logger.removeHandler(self.logger.handlers)
 
 
 def load_config(config_file):
@@ -242,31 +291,66 @@ def task_embedding(pep, tcr_data, aa_dict):
 
 
 def zero_task_embedding(pep, tcr_data, aa_dict):
-        """
-        this function is used to obtain the task-level embedding for the zero-shot setting
+    """
+    this function is used to obtain the task-level embedding for the zero-shot setting
 
-        Parameters:
-            param pep: peptide sequence
-            param tcr_data: TCR list
-            e.g. [query TCRs]
+    Parameters:
+        param pep: peptide sequence
+        param tcr_data: TCR list
+        e.g. [query TCRs]
 
-        Returns:
-            this function returns a peptide embedding and the embedding of query TCRs
-        """
-        # Obtain the TCRs of support set
-        spt_TCRs = tcr_data
-        # Initialize the size of the Tensor for the query set and peptide encoding
-        query_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
-        peptides = torch.FloatTensor(1, 75)
-        # Encoding for the peptide sequence
-        peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
-        # Put the embedding of query TCRs and peptide into the initialized tensor
-        temp = torch.Tensor()
-        for j in spt_TCRs:
-            temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25, aa_dict))]).unsqueeze(0)])
-        query_x[0] = temp
-        peptides[0] = peptide_embedding.flatten()
-        return peptides, query_x
+    Returns:
+        this function returns a peptide embedding and the embedding of query TCRs
+    """
+    # Obtain the TCRs of support set
+    spt_TCRs = tcr_data
+    # Initialize the size of the Tensor for the query set and peptide encoding
+    query_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
+    peptides = torch.FloatTensor(1, 75)
+    # Encoding for the peptide sequence
+    peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
+    # Put the embedding of query TCRs and peptide into the initialized tensor
+    temp = torch.Tensor()
+    for j in spt_TCRs:
+        temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25, aa_dict))]).unsqueeze(0)])
+    query_x[0] = temp
+    peptides[0] = peptide_embedding.flatten()
+    return peptides, query_x
+
+
+class RemovableHandle(object):
+    id: int
+    next_id: int = 0
+
+    def __init__(self, hooks_dict: Any) -> None:
+        self.hooks_dict_ref = weakref.ref(hooks_dict)
+        self.id = RemovableHandle.next_id
+        RemovableHandle.next_id += 1
+
+    def remove(self) -> None:
+        hooks_dict = self.hooks_dict_ref()
+        if hooks_dict is not None and self.id in hooks_dict:
+            del hooks_dict[self.id]
+
+    def __exit__(self, type: Any, value: Any, tb: Any) -> None:
+        self.remove()
+
+
+def get_train_data(peptide, *args, **kwargs):
+    all_data = {}
+    if kwargs:
+        all_data = kwargs
+    assert not (peptide in all_data.keys()), 'Peptide already exists!'
+    tcr_ = []
+    try:
+        for tcr in args:
+            if type(tcr) != list:
+                tcr = list(tcr)
+            tcr_.extend(tcr)
+        all_data[peptide] = tcr_
+    except Exception as e:
+        print(e)
+    return all_data
 
 
 # configure the model architecture and parameters
@@ -283,7 +367,7 @@ Model_config = [
 ]
 
 # load the cofig file
-config_file_path = os.path.join(os.path.abspath(''), 'Configs', 'TrainingConfig.yaml')
+config_file_path = os.path.join(os.path.dirname(__file__), 'Configs', 'TrainingConfig.yaml')
 Data_config = load_config(config_file_path)
 
 Project_path = eval(Data_config['Project_path'])
@@ -296,8 +380,7 @@ Zero_test_data = eval(Data_config['dataset']['Testing_zero_dataset'])
 Train_Round = Data_config['dataset']['Train_Round']
 K_fold = Data_config['dataset']['k_fold']
 
-Aa_dict = eval(Data_config['dataset']['aa_dict'])
+Aa_dict = os.path.join(Project_path, eval(Data_config['dataset']['aa_dict']))
 Device = Data_config['Train']['Meta_learning']['Model_parameter']['device']
 Batch_size = Data_config['Train']['Meta_learning']['Sampling']['batch_size']
 Shuffle = Data_config['Train']['Meta_learning']['Sampling']['sample_shuffle']
-
