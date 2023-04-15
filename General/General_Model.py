@@ -20,7 +20,7 @@ class Memory_Meta(nn.Module):
     def test(self, x_spt):
         net = deepcopy(self.net)
         with torch.no_grad():
-#             print(x_spt.shape)
+            # print(x_spt.shape)
             logits = net(x_spt)
             logits = F.softmax(logits)
         return logits[:, 1].cpu().numpy()

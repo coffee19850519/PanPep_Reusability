@@ -8,152 +8,6 @@ import os
 import yaml
 
 
-def aamapping(TCRSeq, encode_dim):
-    """
-    this function is used for encoding the TCR sequence
-
-    Parameters:
-        param TCRSeq: the TCR original sequence
-        param encode_dim: the first dimension of TCR sequence embedding matrix
-
-    Returns:
-        this function returns a TCR embedding matrix;
-        e.g. the TCR sequence of ASSSAA
-        return: (6 + encode_dim - 6) x 5 embedding matrix, in which (encode_dim - 6) x 5 will be zero matrix
-
-    Raises:
-        KeyError - using 0 vector for replacing the original amino acid encoding
-    """
-    aa_dict_ = joblib.load(aa_dict)
-    TCRArray = []
-    if len(TCRSeq) > encode_dim:
-        print('Length: ' + str(len(TCRSeq)) + ' over bound!')
-        TCRSeq = TCRSeq[0:encode_dim]
-    for aa_single in TCRSeq:
-        try:
-            TCRArray.append(aa_dict_[aa_single])
-        except KeyError:
-            TCRArray.append(np.zeros(5, dtype='float64'))
-    for i in range(0, encode_dim - len(TCRSeq)):
-        TCRArray.append(np.zeros(5, dtype='float64'))
-    return torch.FloatTensor(TCRArray)
-
-
-# Sinusoidal position encoding
-position_encoding = np.array([[pos / np.power(10000, 2.0 * (j // 2) / 5) for j in range(5)] for pos in range(40)])
-position_encoding[:, 0::2] = np.sin(position_encoding[:, 0::2])
-position_encoding[:, 1::2] = np.cos(position_encoding[:, 1::2])
-position_encoding = torch.from_numpy(position_encoding)
-
-
-def add_position_encoding(seq):
-    """
-    this function is used to add position encoding for the TCR embedding
-
-    Parameters:
-        param seq: the TCR embedding matrix
-
-    Returns:
-        this function returns a TCR embedding matrix containing position encoding
-    """
-
-    padding_ids = torch.abs(seq).sum(dim=-1) == 0
-    seq[~padding_ids] += position_encoding[:seq[~padding_ids].size()[-2]]
-    return seq
-
-
-# def task_embedding(pep, tcr_data):
-#     """
-#     this function is used to obtain the task-level embedding
-#
-#     Parameters:
-#         param pep: peptide sequence
-#         param tcr_data: TCR and its label list in a pan-pep way;
-#         e.g. [[support TCRs],[support labels]] or [[support TCRs],[support labels],[query TCRs]]
-#
-#     Returns:
-#         this function returns a peptide embedding, the embedding of support set, the labels of support set and the embedding of query set
-#     """
-#
-#     # 默认每个 Peptide 都具有有标签的 CDR3
-#     # Obtain the TCRs of support set
-#     spt_TCRs = tcr_data[0]  # 有标签的CDR3名称
-#
-#     # Obtain the TCR labels of support set
-#     ypt = tcr_data[1]  # 标签
-#
-#     # Initialize the size of the Tensor for the support set and labels
-#     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
-#     support_y = np.zeros((1, len(ypt)), dtype=np.int)
-#     peptides = torch.FloatTensor(1, 75)
-#
-#     # Determine whether there is a query set based on the length of input param2
-#     if len(tcr_data) > 2:
-#         qry_TCRs = tcr_data[2]  # 没标签的CDR3名称，组成 query
-#     else:
-#         qry_TCRs = ['None']
-#
-#     # Initialize the size of the Tensor for the query set
-#     query_x = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
-#
-#     # Encoding for the peptide sequence
-#     peptide_embedding = add_position_encoding(aamapping(pep, 15))
-#
-#     # Put the embedding of support set, labels and peptide embedding into the initialized tensor
-#     temp = torch.Tensor()
-#     for j in spt_TCRs:
-#         temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
-#     support_x[0] = temp
-#     support_y[0] = np.array(ypt)
-#     peptides[0] = peptide_embedding.flatten()
-#
-#     # Put the embedding of query set into the initialized tensor
-#     temp = torch.Tensor()
-#     if len(tcr_data) > 2:
-#         for j in qry_TCRs:
-#             temp = torch.cat(
-#                 [temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
-#         query_x[0] = temp
-#     else:
-#         query_x[0] = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
-#
-#     return peptides, support_x, torch.LongTensor(support_y), query_x
-
-
-# def labeled_embedding(pep, tcr_data):
-#     """
-#     this function is used to obtain the task-level embedding
-#
-#     Parameters:
-#         param pep: peptide sequence
-#         param tcr_data: TCR and its label list in a pan-pep way;
-#         e.g. [[support TCRs],[support labels]] or [[support TCRs],[support labels],[query TCRs]]
-#
-#     Returns:
-#         this function returns a peptide embedding, the embedding of support set, the labels of support set and the embedding of query set
-#     """
-#
-#     # 默认每个 Peptide 都具有有标签的 CDR3
-#     # Obtain the TCRs of support set
-#     spt_TCRs = tcr_data[0]  # 有标签的CDR3名称
-#     # Obtain the TCR labels of support set
-#     ypt = tcr_data[1]  # 标签
-#     # Initialize the size of the Tensor for the support set and labels
-#     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
-#     support_y = np.zeros((1, len(ypt)), dtype=np.int)
-#     peptides = torch.FloatTensor(1, 75)
-#     # Encoding for the peptide sequence
-#     peptide_embedding = add_position_encoding(aamapping(pep, 15))
-#     # Put the embedding of support set, labels and peptide embedding into the initialized tensor
-#     temp = torch.Tensor()
-#     for j in spt_TCRs:
-#         temp = torch.cat([temp, torch.cat([peptide_embedding, add_position_encoding(aamapping(j, 25))]).unsqueeze(0)])
-#     support_x[0] = temp
-#     support_y[0] = np.array(ypt)
-#     peptides[0] = peptide_embedding.flatten()
-#     return peptides, support_x, torch.LongTensor(support_y)
-
-
 class AvgMeter:  # 保存loss相关的类
     def __init__(self, name="Metric"):
         self.name = name
@@ -259,7 +113,7 @@ def load_config(config_file):
     return config
 
 
-def add_negative_data(positive_data, negative_data):
+def add_negative_data(positive_data, negative_data, ratio=1):
     '''
     将正、负样本加入新的csv中（个数与正样本一致）
     Args:
@@ -269,16 +123,27 @@ def add_negative_data(positive_data, negative_data):
     Returns:
 
     '''
-    negative_data = np.loadtxt(negative_data, dtype=str)
+    if type(negative_data) is str:
+        negative_data = np.loadtxt(negative_data, dtype=str)
     peptide_ = Counter(positive_data['peptide'])
     negative_ = {}
+    # print('All:', len(peptide_))
+    positive = 0
     for pep, num in peptide_.items():
         negative_[pep] = [[], []]
         negative_[pep][0].extend(positive_data[positive_data['peptide'] == pep]['binding_TCR'].array)
         negative_[pep][1].extend(positive_data[positive_data['peptide'] == pep]['label'].array)
-        selected_heal_idx = np.random.choice(len(negative_data), num, replace=False)
-        negative_[pep][0].extend(negative_data[selected_heal_idx])
-        negative_[pep][1].extend([0] * num)
+        positive += num
+
+    selected_query_idx = np.random.choice(len(negative_data), int(positive * ratio), replace=False)
+    selected_query_TCRs = negative_data[selected_query_idx]
+    befor_num = 0
+    for i, j in negative_.items():
+        pep_num = len(j[0])
+        negative_[i][0].extend(selected_query_TCRs[befor_num: befor_num + pep_num])
+        negative_[i][1].extend([0] * pep_num)
+        befor_num += pep_num
+
     all_data_dict = {'peptide': [], 'binding_TCR': [], 'label': []}
     for key, val in negative_.items():
         all_data_dict['peptide'].extend([key] * len(val[0]))
@@ -314,29 +179,30 @@ device = data_config['Train']['General']['device']
 aa_dict = os.path.join(project_path, eval(data_config['dataset']['aa_dict']))
 
 
-def train_epoch(model, train_loader, optimizer):
+def train_epoch(model, train_loader, optimizer, log):
     loss_meter = AvgMeter()
-    tqdm_object = tqdm(train_loader, total=len(train_loader))  # 显示进度条
+    tqdm_object = tqdm(train_loader, total=len(train_loader))
     for step, (peptide_embedding, x_spt, y_spt) in enumerate(tqdm_object):
         setsz, h, w = x_spt.size()
         peptide_embedding, x_spt, y_spt = peptide_embedding.to(device), x_spt.to(device), y_spt.flatten().to(device)
-
         loss = model(x_spt, y_spt)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
         loss_meter.update(loss.item(), setsz)
         tqdm_object.set_postfix(train_loss=loss_meter.avg, lr=get_lr(optimizer))
+        log.info(tqdm_object.__str__())
     return loss_meter
 
 
-def valid_epoch(model, valid_loader):
+def valid_epoch(model, valid_loader, log):
     loss_meter = AvgMeter()
-    tqdm_object = tqdm(valid_loader, total=len(valid_loader))  # 显示进度条
+    tqdm_object = tqdm(valid_loader, total=len(valid_loader))
     for step, (peptide_embedding, x_spt, y_spt) in enumerate(tqdm_object):
         setsz, h, w = x_spt.size()
         peptide_embedding, x_spt, y_spt = peptide_embedding.to(device), x_spt.to(device), y_spt.flatten().to(device)
         loss = model(x_spt, y_spt)
         loss_meter.update(loss.item(), setsz)
         tqdm_object.set_postfix(valid_loss=loss_meter.avg)
+        log.info(tqdm_object.__str__())
     return loss_meter
