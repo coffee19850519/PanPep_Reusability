@@ -22,7 +22,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-def train_main(train_data, save_path, logger_file, task_num: int = 166):
+def train_main(train_data, save_path, logger_file, task_num: int = 166, hook=None, save_train_data=False):
     args = Args(C=Data_config['Train']['Meta_learning']['Model_parameter']['num_of_index'], L=Data_config['Train']['Meta_learning']['Model_parameter']['len_of_embedding'], R=Data_config['Train']['Meta_learning']['Model_parameter']['len_of_index'],
                 meta_lr=Data_config['Train']['Meta_learning']['Model_parameter']['meta_lr'], update_lr=Data_config['Train']['Meta_learning']['Model_parameter']['inner_loop_lr'], update_step=Data_config['Train']['Meta_learning']['Model_parameter']['inner_update_step'],
                 update_step_test=Data_config['Train']['Meta_learning']['Model_parameter']['inner_fine_tuning'], regular=Data_config['Train']['Meta_learning']['Model_parameter']['regular_coefficient'], epoch=Data_config['Train']['Meta_learning']['Trainer_parameter']['epoch'],
@@ -41,7 +41,9 @@ def train_main(train_data, save_path, logger_file, task_num: int = 166):
     # loading training data
     Training_data = PepTCRdict(train_data, os.path.join(Project_path, Negative_dataset), 2, 3,
                                aa_dict_path=os.path.join(Project_path, Aa_dict), mode='train')
-
+    if hook:
+        Training_data.register_hook(hook)
+    args.task_num = len(Training_data.PepTCRdict)
     ################ Meta learning #################
     # initialize the logger for saving the traininig log
     logger = logger_file
@@ -50,7 +52,7 @@ def train_main(train_data, save_path, logger_file, task_num: int = 166):
     for epoch in range(args.epoch):
         print(f"epoch:{epoch}")
         # construct the dataloader for the training dataset
-        db = DataLoader(Training_data, Batch_size, Shuffle, num_workers=1, pin_memory=True)
+        db = DataLoader(Training_data, Batch_size, Shuffle, num_workers=0, pin_memory=True)
         # list for the training acc of each peptide-specific learner
         epoch_train_acc = []
         # data iteration
@@ -78,8 +80,12 @@ def train_main(train_data, save_path, logger_file, task_num: int = 166):
             joblib.dump(model.prev_data, os.path.join(save_path, "prev_data.pkl"))
             # store the meta learner
             torch.save(model.state_dict(), os.path.join(save_path, "model.pt"))
+            if save_train_data and hook is not None:
+                save_name = train_data.split(os.sep)[-1].split('.')[0] + '_all_train_data.csv'
+                pd.DataFrame(Training_data.all_tasks).to_csv(os.path.join(save_path, save_name), index=False)
         # reset the stored data
         model.reset()
+        Training_data.reset()
     if logger:
         logger.info('Finish training!')
 
@@ -172,36 +178,36 @@ if __name__ == '__main__':
         meta_dataset = pd.read_csv(os.path.join(Project_path, Train_dataset))
         pep_tcr_dict = get_peptide_tcr(meta_dataset, 'peptide', 'binding_TCR')
         peptide = list(meta_dataset.drop_duplicates(subset=['peptide'], keep='first', inplace=False)['peptide'])
-        filter_peptide = [j for j in [i if len(meta_dataset[meta_dataset['peptide'] == i]) < 100 else None for i in peptide] if j != None]
-        # filter_peptide = pep_tcr_dict.values()  # TODO
-        all_data_dict = {'peptide': [], 'binding_TCR': [], 'label': []}
-        for key, val in pep_tcr_dict.items():
-            if key in filter_peptide:
-                all_data_dict['peptide'].extend([key] * len(val))
-                all_data_dict['binding_TCR'].extend(val)
-                all_data_dict['label'].extend([1] * len(val))
-        all_data_dict = pd.DataFrame(all_data_dict)
-        KFold_data(K_fold, filter_peptide, all_data_dict, output=os.path.join(Project_path, Data_output))  # get KFold data (Just run once)
-        # KFold_data(k_fold, peptide, meta_dataset, output=os.path.join(project_path, data_output))  # get KFold data (Just run once)
-    for index in range(Train_Round):
-        # seed
-        seed = random.randint(0, 10000)
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
-        np.random.seed(seed)
-        random.seed(seed)
-        torch.cuda.manual_seed(seed)
+        KFold_data(K_fold, peptide, meta_dataset, output=os.path.join(Project_path, Data_output))  # get KFold data (Just run once)
+        # filter peptide
+        # filter_peptide = [j for j in [i if len(meta_dataset[meta_dataset['peptide'] == i]) < 100 else None for i in peptide] if j != None]
+        # # TODO
+        # all_data_dict = {'peptide': [], 'binding_TCR': [], 'label': []}
+        # for key, val in pep_tcr_dict.items():
+        #     if key in filter_peptide:
+        #         all_data_dict['peptide'].extend([key] * len(val))
+        #         all_data_dict['binding_TCR'].extend(val)
+        #         all_data_dict['label'].extend([1] * len(val))
+        # all_data_dict = pd.DataFrame(all_data_dict)
+        # KFold_data(K_fold, filter_peptide, all_data_dict, output=os.path.join(Project_path, Data_output))  # get KFold data (Just run once)
 
+    for index in range(Train_Round):
         for kf_time in range(Data_config['dataset']['current_fold'][0], Data_config['dataset']['current_fold'][1]):  # Here you can specify which fold or in config file ['current_fold']. (such as range(2, 3) is fold 2).
+            # seed
+            seed = random.randint(0, 10000)
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+            np.random.seed(seed)
+            random.seed(seed)
+            torch.cuda.manual_seed(seed)
             # Create the output folder of the currently specified fold
             save_path = os.path.join(Project_path, Train_output_dir, 'Round' + str(index + 1), 'kfold' + str(kf_time))
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
             # logger
-            logger = MLogger(os.path.join(Project_path, Train_output_dir, 'Round' + str(index + 1), 'kfold' + str(kf_time), 'training.log'))
+            logger = MLogger(os.path.join(save_path, 'training.log'))  ###
             logger.info('Round:' + str(index + 1) + ', KFold:' + str(kf_time))
             # training
             # get kfold training data
             train_data_path = os.path.join(Project_path, Data_output, 'kfold' + str(kf_time), 'KFold_' + str(kf_time) + '_train.csv')
-            train_data = pd.read_csv(train_data_path)
-            train_main(train_data=train_data_path, save_path=save_path, logger_file=logger, task_num=len(Counter(train_data['peptide'])))
+            train_main(train_data=train_data_path, save_path=save_path, logger_file=logger)
