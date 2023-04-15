@@ -4,10 +4,15 @@ import torch
 from torch.utils.data import Dataset
 import joblib
 
+from collections import OrderedDict
+
+from utils import RemovableHandle
+
 
 class PepTCRdict(Dataset):
     def __init__(self, PepTCRdictFile, HealthyTCRFile, k_shot, k_query, aa_dict_path, encode_dim=25, mode='train', k=5):
-
+        self._hooks = None
+        self.all_tasks = {}  # keys: peptide, values: [all positive, all negative]
         # load the known binding TCR set
         tmp = pd.read_csv(PepTCRdictFile)
         self.PepTCRdict = {}
@@ -61,23 +66,23 @@ class PepTCRdict(Dataset):
     def aamapping(self, TCRSeq, encode_dim):
         """
         this function is used for encoding the TCR sequence
-        
+
         Parameters:
             param TCRSeq: the TCR original sequence
             param encode_dim: the first dimension of TCR sequence embedding matrix
-            
+
         Returns:
             this function returns a TCR embedding matrix;
             e.g. the TCR sequence of ASSSAA
             return: (6 + encode_dim - 6) x 5 embedding matrix, in which (encode_dim - 6) x 5 will be zero matrix
-            
+
         Raises:
             KeyError - using 0 vector for replacing the original amino acid encoding
         """
 
         TCRArray = []
         if len(TCRSeq) > encode_dim:
-            # print('Length: '+str(len(TCRSeq))+' over bound!')
+            print('Length: '+str(len(TCRSeq))+' over bound!')
             TCRSeq = TCRSeq[0:encode_dim]
         for aa_single in TCRSeq:
             try:
@@ -92,16 +97,25 @@ class PepTCRdict(Dataset):
     def add_position_encoding(self, seq):
         """
         this function is used to add position encoding for the TCR embedding
-        
+
         Parameters:
             param seq: the TCR embedding matrix
-            
+
         Returns:
             this function returns a TCR embedding matrix containing position encoding
         """
         padding_ids = torch.abs(seq).sum(dim=-1) == 0
         seq[~padding_ids] += self.position_encoding[:seq[~padding_ids].size()[-2]]
         return seq
+
+    def register_hook(self, hook):
+        if self._hooks is None:
+            self._hooks = OrderedDict()
+        handle = RemovableHandle(self._hooks)
+        self._hooks[handle.id] = hook
+
+    def set_all_tasks(self, tasks):
+        self.all_tasks = tasks
 
     def __getitem__(self, item):
 
@@ -147,10 +161,17 @@ class PepTCRdict(Dataset):
             # flatten the peptide encoding used for embedding the task
         peptide_embedding = peptide_embedding.flatten()
 
+        if self._hooks:
+            for hook in self._hooks.values():
+                all_tasks = hook(peptide, selected_res_TCRs, selected_res_TCRs_query, selected_heal_TCRs, selected_heal_TCRs_query, **self.all_tasks)
+                self.set_all_tasks(all_tasks)
         return peptide_embedding, support_x, torch.LongTensor(support_y), query_x, torch.LongTensor(query_y)
 
     def __len__(self):
         return len(self.PepTCRdict)
+
+    def reset(self):
+        self.all_tasks = {}
 
 # TestData = PepTCRdict("/home/gaoyicheng/pep_tcr_with_gyl/TCRBagger/Requirements/dict_pepTcr_Result.pkl",\
 #     "/home/gaoyicheng/pep_tcr_with_gyl/TCRBagger/HealthyTCR/FilteredOutput.txt",1,1,mode = 'train',k=5)
