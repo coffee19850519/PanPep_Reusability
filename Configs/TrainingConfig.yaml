@@ -1,4 +1,4 @@
-Project_path: os.path.abspath("")
+Project_path: os.path.abspath(os.path.dirname(__file__))
 dataset:
   Training_dataset: os.path.join('Requirements', 'meta_dataset.csv')
   Testing_zero_dataset: os.path.join('Requirements', 'zero_dataset.csv')
@@ -7,7 +7,7 @@ dataset:
   Train_Round: 5 #The number of cross-validations
   k_fold: 5 # fold times
   current_fold: [1, 6] # current fold (2, 3): fold2; (2, 4): fold2, fold3
-  data_output: KFolddata # KFold data save path
+  data_output: KFolddata_old # KFolddata # KFold data save path
 
 
 Train:
@@ -15,7 +15,7 @@ Train:
 
   Meta_learning:
     Sampling:
-      batch_size: 4
+      batch_size: 1
       sample_shuffle: True
 
     Model_parameter:
@@ -38,11 +38,12 @@ Train:
 
   General:
     epoch: 500
-    Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
+    # Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
     device: cuda  # device
     train_batch_size: 128
     valid_batch_size: 64
     Test_result_path: test_result
+    sample_shuffle: True
 
 Test:
   Test_output_dir: Test_Results
