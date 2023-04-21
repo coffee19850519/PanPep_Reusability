@@ -7,11 +7,13 @@ dataset:
   Train_Round: 5 #The number of cross-validations
   k_fold: 5 # fold times
   current_fold: [1, 6] # current fold (2, 3): fold2; (2, 4): fold2, fold3
-  data_output: KFolddata_old # KFolddata # KFold data save path
+  data_output: KFolddata_old # KFold data save path
 
 
 Train:
-  Train_output_dir: Results
+#  Train_output_dir: Result_data_inculde_majority #  Results
+#  Train_output_dir: Result_data_test #  Results
+  Train_output_dir: Result_distillation4 # Result_distillation5
 
   Meta_learning:
     Sampling:
@@ -23,8 +25,8 @@ Train:
       inner_loop_lr: 0.01  # Task-level inner update learning rate
       inner_update_step: 3  # Task-level inner update steps
       inner_fine_tuning: 3  # Update steps for finetunning
-      num_of_index: 3  # Peptide clustering number
-      len_of_index: 3  # Peptide Index matrix vector length
+      num_of_index: 2 # 4 # 5  # 3  # Peptide clustering number
+      len_of_index: 2 # 4 # 5  # 3  # Peptide Index matrix vector length
       len_of_embedding: 75  # Peptide embedding length
       regular_coefficient: 0  # The regular coefficient
       device: cuda  # device
@@ -38,12 +40,13 @@ Train:
 
   General:
     epoch: 500
-    # Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
+#    Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
     device: cuda  # device
     train_batch_size: 128
     valid_batch_size: 64
     Test_result_path: test_result
     sample_shuffle: True
+    Train_output_dir: Result
 
 Test:
   Test_output_dir: Test_Results
