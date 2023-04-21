@@ -7,6 +7,8 @@ from collections import Counter
 import os
 import yaml
 
+from utils import generate_selected_idx
+
 
 class AvgMeter:  # 保存loss相关的类
     def __init__(self, name="Metric"):
@@ -136,6 +138,54 @@ def add_negative_data(positive_data, negative_data, ratio=1):
         positive += num
 
     selected_query_idx = np.random.choice(len(negative_data), int(positive * ratio), replace=False)
+    selected_query_TCRs = negative_data[selected_query_idx]
+    befor_num = 0
+    for i, j in negative_.items():
+        pep_num = len(j[0])
+        negative_[i][0].extend(selected_query_TCRs[befor_num: befor_num + pep_num])
+        negative_[i][1].extend([0] * pep_num)
+        befor_num += pep_num
+
+    all_data_dict = {'peptide': [], 'binding_TCR': [], 'label': []}
+    for key, val in negative_.items():
+        all_data_dict['peptide'].extend([key] * len(val[0]))
+        all_data_dict['binding_TCR'].extend(val[0])
+        all_data_dict['label'].extend(val[1])
+    all_data_dict = pd.DataFrame(all_data_dict)
+    return all_data_dict
+
+
+def select_data_add_negative_data(positive_data, negative_data, spt_num=None, ratio=1):
+    '''
+    将正、负样本加入新的csv中（个数与正样本一致）
+    Args:
+        positive_data:
+        negative_data:
+
+    Returns:
+
+    '''
+    if type(negative_data) is str:
+        negative_data = np.loadtxt(negative_data, dtype=str)
+    peptide_ = Counter(positive_data['peptide'])
+    negative_ = {}
+    positive = 0
+    for pep, num in peptide_.items():
+        negative_[pep] = [[], []]
+        if spt_num is None:
+            negative_[pep][0].extend(positive_data[positive_data['peptide'] == pep]['binding_TCR'].array)
+            negative_[pep][1].extend(positive_data[positive_data['peptide'] == pep]['label'].array)
+            positive += num
+        else:
+            idx = generate_selected_idx(num)
+            for i in range(spt_num):
+                negative_[pep][0].append(positive_data[positive_data['peptide'] == pep]['binding_TCR'].array[next(idx)])
+                negative_[pep][1].append(1)
+
+    if spt_num is None:
+        selected_query_idx = np.random.choice(len(negative_data), int(positive * ratio), replace=False)
+    else:
+        selected_query_idx = np.random.choice(len(negative_data), int(spt_num * ratio * len(peptide_)), replace=False)
     selected_query_TCRs = negative_data[selected_query_idx]
     befor_num = 0
     for i, j in negative_.items():
