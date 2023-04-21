@@ -7,9 +7,8 @@ from General_Model import Memory_Meta
 from collections import Counter
 
 
-from utils import Data_config, Project_path, Data_output, Device, Aa_dict, Model_config, Train_Round, MLogger
-
-from function import PepTCRdict, train_epoch, valid_epoch, add_negative_data
+from utils import Data_config, Project_path, Data_output, Device, Aa_dict, Model_config, Train_Round, MLogger, add_negative_data
+from function import PepTCRdict, train_epoch, valid_epoch, select_data_add_negative_data
 
 
 if __name__ == '__main__':
@@ -43,8 +42,8 @@ if __name__ == '__main__':
             all_peptide = list(Counter(train_data_4fold['peptide']).keys())
             train_peptide = [all_peptide[i] for i in np.random.choice(len(all_peptide), int(len(all_peptide) * 0.8))]
 
-            train_data_all = add_negative_data(train_data_4fold[train_data_4fold['peptide'].isin(train_peptide)], negative_data)
-            valid_data_all = add_negative_data(train_data_4fold[~train_data_4fold['peptide'].isin(train_peptide)], negative_data)
+            train_data_all = select_data_add_negative_data(train_data_4fold[train_data_4fold['peptide'].isin(train_peptide)], negative_data, spt_num=2)
+            valid_data_all = select_data_add_negative_data(train_data_4fold[~train_data_4fold['peptide'].isin(train_peptide)], negative_data, spt_num=2)
 
             Train_data = PepTCRdict(train_data_all, aa_dict_path=Aa_dict)
             Train_db = torch.utils.data.DataLoader(Train_data, Data_config['Train']['General']['train_batch_size'], shuffle=Data_config['Train']['General']['sample_shuffle'], num_workers=0)
@@ -52,7 +51,7 @@ if __name__ == '__main__':
             Valid_data = PepTCRdict(valid_data_all, aa_dict_path=Aa_dict)
             Valid_db = torch.utils.data.DataLoader(Valid_data, Data_config['Train']['General']['valid_batch_size'], shuffle=Data_config['Train']['General']['sample_shuffle'], num_workers=0)
 
-            model_save_path = os.path.join('Round' + str(index + 1), 'kfold' + str(kf_time))
+            model_save_path = os.path.join(Data_config['Train']['General']['Train_output_dir'], 'Round' + str(index + 1), 'kfold' + str(kf_time))
             if not os.path.exists(model_save_path):
                 os.makedirs(model_save_path)
             # logger
@@ -70,4 +69,4 @@ if __name__ == '__main__':
                 if valid_loss.avg < best_loss:
                     best_loss = valid_loss.avg
                     torch.save(model.state_dict(), os.path.join(model_save_path, 'KFold_' + str(kf_time) + '_best.pt'))
-                    print("Saved Best Model!")
+                    logger.info("Saved Best Model!")
