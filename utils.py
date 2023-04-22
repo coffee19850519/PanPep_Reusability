@@ -353,6 +353,48 @@ def get_train_data(peptide, *args, **kwargs):
     return all_data
 
 
+def generate_selected_idx(n, generator=None):
+    """
+    随机生成长度为n的tensor列表（内部是0到n-1数字的乱序），返回一个生成器
+    Args:
+        n:
+        generator:
+
+    Returns:
+
+    """
+    if generator is None:
+        seed = int(torch.empty((), dtype=torch.int64).random_().item())
+        generator = torch.Generator()
+        generator.manual_seed(seed)
+    else:
+        generator = generator
+    a = torch.randperm(n, generator=generator)
+    for i in range(n):
+        yield a[i]
+
+
+def return_m_from_n(m, n=None, generate_idx=None):
+    """
+    从长度为n的生成器中返回m项 (n未指定时，生成器不为空；生成器未指定时，n不能为空) (且m<=n)
+    Args:
+        m:
+        n:
+        generate_idx:
+
+    Returns:
+
+    """
+    assert ((n is not None) and (m <= n)) or ((generate_idx is not None) and (m <= generate_idx.gi_frame.f_locals['n']))
+    if generate_idx is None:
+        generate_idx = generate_selected_idx(n)
+    return_list = []
+    for i in range(m):
+        return_list.append(next(generate_idx).item())
+    return return_list
+
+
+
 # configure the model architecture and parameters
 Model_config = [
     ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
