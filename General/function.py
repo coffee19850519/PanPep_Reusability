@@ -4,9 +4,10 @@ import pandas as pd
 import torch
 from tqdm.autonotebook import tqdm
 from collections import Counter
-import os
+import os, sys
 import yaml
 
+sys.path.append("..")
 from utils import generate_selected_idx
 
 
