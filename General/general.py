@@ -1,14 +1,15 @@
 import random
-import os
+import os, sys
 import numpy as np
 import pandas as pd
 import torch
 from General_Model import Memory_Meta
 from collections import Counter
 
-
-from utils import Data_config, Project_path, Data_output, Device, Aa_dict, Model_config, Train_Round, MLogger, add_negative_data
 from function import PepTCRdict, train_epoch, valid_epoch, select_data_add_negative_data
+sys.path.append("..")
+from utils import Data_config, Project_path, Data_output, Device, Aa_dict, Model_config, Train_Round, MLogger, add_negative_data
+
 
 
 if __name__ == '__main__':
