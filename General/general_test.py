@@ -1,11 +1,11 @@
-import os
+import os, sys
 import pandas as pd
 import torch
 from General_Model import Memory_Meta
 from collections import Counter
 import joblib
 
-
+sys.path.append("..")
 from utils import Data_config, Project_path, Data_output, Device, Model_config, add_position_encoding, aamapping, Aa_dict, Train_Round, get_peptide_tcr, Test_output_dir
 from test_5fold import change_dict2test_struct
 
