@@ -2,10 +2,10 @@ import pandas as pd
 from sklearn.metrics import roc_auc_score, precision_recall_curve, auc
 import os, sys
 
-from result_metrics import Args
-from result_metrics import get_metrics as zero_metrics
 sys.path.append("..")
 from utils import get_peptide_tcr, Project_path, Data_config, Data_output, Train_Round, FilePath, load_csv_like_file, Train_output_dir, Test_output_dir, Zero_test_data
+from result_metrics import Args
+from result_metrics import get_metrics as zero_metrics
 
 
 def get_peptide_tcr_result(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColumeName: str = 'Alpha CDR3',
