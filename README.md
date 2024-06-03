@@ -21,7 +21,11 @@
 
 `General\general.py`: General training.
 
+`Similarity\get_similarity.py`: Analyze the similarity across peptides and tcrS.
+
 `utils.py`: Common functions and related configurations.
+
+`model_PCA.py`: Do principal component analysis for the model obtained by distillation module.
 
 control dataset: https://zenodo.org/record/7544387  ([control dataset url](https://zenodo.org/record/7544387/files/Control%20dataset.txt?download=1))(Put it in the root directory of the project.)
 
