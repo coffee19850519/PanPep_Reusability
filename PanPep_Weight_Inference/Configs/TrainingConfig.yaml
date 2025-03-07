@@ -1,0 +1,74 @@
+Project_path: os.path.abspath(os.path.dirname(__file__))
+dataset:
+  Training_dataset: os.path.join('Requirements', 'meta_dataset.csv')
+  Testing_zero_dataset: os.path.join('Requirements', 'zero_dataset.csv')
+  Testing_zero_remove_dataset: os.path.join('Requirements', 'zero_dataset_remove_repeat_of_meta.csv')
+  Negative_dataset: Control_dataset_new.txt
+  #Negative_dataset: all_tcra_pool.txt
+  #Negative_dataset: Control_dataset_new.txt
+  aa_dict: os.path.join('Requirements', 'dic_Atchley_factors.pkl')
+  Train_Round: 5 #The number of cross-validations
+  k_fold: 5 # fold times
+  current_fold: [1, 6] # current fold (2, 3): fold2; (2, 4): fold2, fold3
+  data_output: KFolddata_old # KFold data save path
+
+
+Train:
+#  Train_output_dir: Result_data_inculde_majority #  Results
+#  Train_output_dir: Result_data_test #  Results
+  Train_output_dir4other_update_step: Result_other_update_step4 # Result_other_update_step5
+  Train_output_dir: Result_save_train_data_ #  Results
+#  Train_output_dir: Result_distillation2__ # Result_distillation4 # Result_distillation5  # other distillation num
+
+  Meta_learning:
+    Sampling:
+      batch_size: 4096
+      sample_shuffle: True
+      support: 2
+      query: 3
+
+    Model_parameter:
+      meta_lr: 0.001  # Meta-level outer learning rate
+      inner_loop_lr: 0.01  # Task-level inner update learning rate
+      inner_update_step: 3  # Task-level inner update steps #默认是3
+      inner_fine_tuning: 3  # Update steps for finetunning #默认是3
+      num_of_index: 3 # 2 # 4 # 5  # 3  # Peptide clustering number
+      len_of_index: 3 # 2 # 4 # 5  # 3  # Peptide Index matrix vector length
+      len_of_embedding: 75  # Peptide embedding length
+      regular_coefficient: 0  # The regular coefficient
+      device: cuda  # device
+#      device: cpu  # device
+
+    Trainer_parameter:
+      epoch: 500 # 2
+
+  Disentanglement_distillation:
+    Trainer_parameter:
+      epoch: 800 # 3
+
+  General:
+    epoch: 200  # 500
+#    Training_dataset: os.path.join('Requirements', 'base_dataset.csv')
+    device: cuda  # device
+#    device: cpu  # device
+    train_batch_size: 128
+    valid_batch_size: 64
+    Test_result_path: test_result
+    sample_shuffle: True
+    Train_output_dir: Result_using_few_data_
+#    Train_output_dir_fine_tune: Result_using_few_data_fine_tune
+
+  Majority:
+    Training_dataset: os.path.join('Requirements', 'majority_training_dataset.csv')
+#    Test_dataset: os.path.join('Requirements', 'majority_testing_dataset.csv')
+    Test_dataset: os.path.join('Requirements', 'Example_majority.csv')
+    Test_dataset_label: os.path.join('Requirements', 'majority_testing_dataset.csv')
+#    epoch: 800
+#    device: cuda
+#    train_batch_size: 24
+#    Test_result_path: test_result
+#    sample_shuffle: True
+#    Train_output_dir: Result_majority
+
+Test:
+  Test_output_dir: Test_Results
