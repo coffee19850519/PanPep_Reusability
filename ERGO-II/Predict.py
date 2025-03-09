@@ -375,12 +375,19 @@ def read_input_file(datafile):
     amino_acids = [letter for letter in 'ARNDCEQGHILKMFPSTWYV']
     all_pairs = []
     
-    def invalid(seq):
-        return pd.isna(seq) or any([aa not in amino_acids for aa in seq])
+    def is_valid_amino_acid_seq(seq):
+        if pd.isna(seq):
+            return False
+        return all([aa in amino_acids for aa in seq])
     
     try:
         data = pd.read_csv(datafile)
+        valid_indices = []
+        
         for index in range(len(data)):
+            if not is_valid_amino_acid_seq(data['TRB'][index]):
+                continue
+                
             sample = {}
             sample['tcra'] = data['TRA'][index]
             sample['tcrb'] = data['TRB'][index]
@@ -392,13 +399,18 @@ def read_input_file(datafile):
             sample['peptide'] = data['Peptide'][index]
             sample['mhc'] = data['MHC'][index]
             sample['sign'] = 0
-            
-            if invalid(sample['tcrb']) or invalid(sample['peptide']):
+
+            if not is_valid_amino_acid_seq(sample['peptide']):
                 continue
-            if invalid(sample['tcra']):
+
+            if not is_valid_amino_acid_seq(sample['tcra']):
                 sample['tcra'] = 'UNK'
+                
             all_pairs.append(sample)
-        return all_pairs, data
+            valid_indices.append(index)
+
+        filtered_data = data.iloc[valid_indices].reset_index(drop=True)
+        return all_pairs, filtered_data
     except Exception as e:
         print(f"Error reading file {datafile}: {str(e)}")
         return None, None
@@ -459,81 +471,6 @@ def get_train_dicts(train_pickle):
     except Exception as e:
         print(f"Error loading training data: {str(e)}")
         return None
-
-# def process_folder(dataset, input_dir):
-#     output_dir = 'prediction1'
-#     os.makedirs(output_dir, exist_ok=True)
-    
-#     print("Loading model...")
-#     model, train_file = get_model(dataset)
-#     if model is None:
-#         print("Model loading failed")
-#         return
-        
-#     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-#     print(f"Using device: {device}")
-    
-#     model = model.to(device)
-#     model.eval()
-    
-#     print("Loading training data...")
-#     train_dicts = get_train_dicts(train_file)
-#     if train_dicts is None:
-#         print("Training data loading failed")
-#         return
-    
-#     csv_files = glob.glob(os.path.join(input_dir, '*.csv'))
-#     if not csv_files:
-#         print(f"No CSV files found in {input_dir}!")
-#         return
-    
-#     print(f"Found {len(csv_files)} CSV files to process")
-    
-#     for i, csv_file in enumerate(csv_files, 1):
-#         try:
-#             file_name = os.path.basename(csv_file)
-#             print(f"\nProcessing [{i}/{len(csv_files)}]: {file_name}")
-            
-#             test_samples, dataframe = read_input_file(csv_file)
-#             if test_samples is None or dataframe is None:
-#                 print(f"Skipping file {file_name}")
-#                 continue
-                
-#             test_dataset = SignedPairsDataset(test_samples, train_dicts)
-            
-#             batch_size = 1000
-#             loader = DataLoader(
-#                 test_dataset, 
-#                 batch_size=batch_size, 
-#                 shuffle=False,
-#                 collate_fn=lambda b: test_dataset.collate(
-#                     b, 
-#                     tcr_encoding=model.tcr_encoding_model,
-#                     cat_encoding=model.cat_encoding
-#                 )
-#             )
-            
-#             outputs = []
-#             with torch.no_grad():
-#                 for batch in tqdm(loader, desc="Prediction progress"):
-#                     batch = tuple(x.to(device) if isinstance(x, torch.Tensor) else x for x in batch)
-#                     output = model.validation_step(batch, 0)
-#                     if output:
-#                         outputs.extend(output['y_hat'].cpu().numpy().tolist())
-            
-#             output_filename = f'{os.path.splitext(file_name)[0]}_predicted.csv'
-#             output_path = os.path.join(output_dir, output_filename)
-            
-#             dataframe['Score'] = outputs
-#             dataframe.to_csv(output_path, index=False)
-            
-#             print(f"File {file_name} processed, results saved to: {output_path}")
-            
-#         except Exception as e:
-#             print(f"Error processing file {file_name}: {str(e)}")
-#             continue
-    
-#     print("\nAll files processed!")
 
 def process_file(dataset, input_file, output_dir):
     # output_dir = 'prediction1'
