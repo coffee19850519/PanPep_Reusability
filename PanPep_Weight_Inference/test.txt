@@ -1,0 +1,12 @@
+nohup python inference_meta_learner.py \
+    --gpu 0,1,2,3,4,5,6,7 \     #选用几个gpu，可以多卡
+    --distillation 3 \          #蒸馏次数，一般就是3
+    --upper_limit 100000 \      #batch size  few shot一般是10g显存对应100000
+    --k_shot 2 \               # 选择finetuning的个数
+    --test_data /public/home/wxy/Panpep1/few-shot.csv \    #few shot数据（里面就是正样本1）
+    --negative_data /public/home/wxy/Panpep1/Control_dataset.txt \    #负样本数据（背景库）
+    --model_path /public/home/wxy/Panpep1/Requirements \    #模型路径
+    --result_dir result/few-meta \    #结果保存路径
+    --peptide_encoding /public/home/wxy/Panpep1/encoding/peptide_b.npz \    #peptide encoding
+    --tcr_encoding /public/home/wxy/Panpep1/encoding/tcr_b.npz \    #tcr encoding
+    > inference_log.out 2>&1 &
