@@ -41,13 +41,17 @@ import csv
 import pandas as pd
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error和warining信息 3 只显示error信息
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+# os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if physical_devices:
     try:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+        print("visible GPUs:", physical_devices)
+        tf.config.set_logical_device_configuration(
+            physical_devices[0],
+            [tf.config.LogicalDeviceConfiguration(memory_limit=10240)])
+
     except Exception as e:
-        print("Error setting memory growth:", e)
+        print("Error setting GPU:", e)
 # # 2、TCRA预测函数
 
 
@@ -121,7 +125,11 @@ def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
     
     RESNET_X = RESNET_Feature
     RESNET_X = RESNET_X.reshape([len(RESNET_X),20,11,2])
-    
+
+    # Y_PRED_FULL = FULL_model.predict_on_batch(FULL_X)
+    # Y_PRED_CNN = CNN_model.predict_on_batch(CNN_X)
+    # Y_PRED_RESNET = RESNET_model.predict_on_batch(RESNET_X)
+
     Y_PRED_FULL = FULL_model.predict(FULL_X, batch_size=n)
     Y_PRED_CNN = CNN_model.predict(CNN_X, batch_size=n)
     Y_PRED_RESNET = RESNET_model.predict(RESNET_X, batch_size=n)

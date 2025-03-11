@@ -15,7 +15,7 @@ parser.add_argument('--job_dir', type=str, required=True,
 parser.add_argument('--gpu', type=str, default='2',
                     help='GPU device number(s) to use. e.g., "2" or "0,1,2"')
 parser.add_argument('--sample_size', type=int, default=1000,
-                    help='Number of samples to process in each batch')
+                    help='Number of samples to process in each chunk')
 parser.add_argument('--batch_size', type=int, default=1000,
                     help='Number of samples to process in each batch')
 args = parser.parse_args()
@@ -39,7 +39,8 @@ print(f"Total samples in input file: {total_samples}")
 num_chunks= (total_samples + sample_size - 1) // sample_size
 print(f"Processing data in {num_chunks} batches of size {sample_size}")
 
-temp_dir = user_dir + 'temp_batches/'
+# temp_dir = user_dir + 'temp_batches/'
+temp_dir = user_dir + os.path.basename(input_file_path)[:-4]+ '/'
 if not os.path.exists(temp_dir):
     os.makedirs(temp_dir)
 
@@ -47,7 +48,7 @@ all_predictions = []
 processed_batches = set()
 
 for chunks_idx in range(num_chunks):
-    print(f"\nProcessing batch {chunks_idx+1}/{num_chunks}")
+    print(f"\nProcessing chunk {chunks_idx+1}/{num_chunks}")
 
     start_idx = chunks_idx * sample_size
     end_idx = min((chunks_idx + 1) * sample_size, total_samples)
@@ -58,10 +59,10 @@ for chunks_idx in range(num_chunks):
     if not os.path.exists(batch_dir):
         os.makedirs(batch_dir)
 
-    print(f"Processing batch {chunks_idx+1} with {end_idx-start_idx} samples")
+    print(f"Processing chunk {chunks_idx+1} with {end_idx-start_idx} samples")
 
     if chunks_idx in processed_batches:
-        print(f"Batch {chunks_idx+1} already processed, skipping...")
+        print(f"Chunk {chunks_idx+1} already processed, skipping...")
         continue
     
     try:
@@ -73,29 +74,33 @@ for chunks_idx in range(num_chunks):
         elif len(result) == 5:
             error_info, TCRA_cdr3, TCRB_cdr3, Epitope, TCRB_pca_features = result
         else:
-            print(f"Unexpected return value from deal_file for batch {chunks_idx+1}")
+            print(f"Unexpected return value from deal_file for chunk {chunks_idx+1}")
             continue
 
         if error_info != 0:
-            print(f"Error in batch {chunks_idx+1}: error code {error_info}")
+            print(f"Error in chunk {chunks_idx+1}: error code {error_info}")
             continue
 
         if TCRA_cdr3 is None or TCRB_cdr3 is None or Epitope is None:
-            print(f"No valid data in batch {chunks_idx+1}")
+            print(f"No valid data in chunk {chunks_idx+1}")
             continue
+
+        print(f"Feature extraction has done for chunk {chunks_idx + 1}")
 
         batch_output = save_outputfile(batch_dir, model_select, batch_data, 
                                       TCRA_cdr3, TCRB_cdr3, Epitope, TCRB_pca_features, batch_size)
 
         if batch_output and os.path.exists(batch_output):
             batch_predictions = pd.read_csv(batch_output)
-            print(f"Batch {chunks_idx+1} predictions shape: {batch_predictions.shape}")
+            print(f"Chunk {chunks_idx+1} predictions shape: {batch_predictions.shape}")
             all_predictions.append(batch_predictions)
             processed_batches.add(chunks_idx)
-            print(f"Successfully processed batch {chunks_idx+1}")
-    
+            print(f"Successfully processed chunk {chunks_idx+1}")
+
+        del result,batch_output
+
     except Exception as e:
-        print(f"Error processing batch {chunks_idx+1}: {str(e)}")
+        print(f"Error Processing chunk {chunks_idx+1}: {str(e)}")
         continue
 
 print(f"\nSuccessfully processed {len(processed_batches)} out of {num_chunks} batches")
@@ -110,7 +115,7 @@ if all_predictions:
         if os.path.exists(batch_output_path):
             batch_pred = pd.read_csv(batch_output_path)
             sorted_predictions.append(batch_pred)
-            print(f"Added batch {chunks_idx+1} to final results")
+            print(f"Added chunk {chunks_idx+1} to final results")
 
     if sorted_predictions:
         final_predictions = pd.concat(sorted_predictions, ignore_index=True)
@@ -121,7 +126,7 @@ if all_predictions:
     else:
         print("\nNo valid predictions to merge.")
 else:
-    print("\nNo valid predictions were generated from any batch.")
+    print("\nNo valid predictions were generated from any chunk.")
 
 
 end = time.time()
