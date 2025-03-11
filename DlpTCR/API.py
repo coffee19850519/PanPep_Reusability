@@ -1,75 +1,165 @@
 import os
 import argparse
-import logging
-from pathlib import Path
-from typing import Tuple, List, Optional
+import pandas as pd
+import numpy as np
+from Model_Predict_Feature_Extraction import *
+from DLpTCR_server import *
+import time
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+# 创建参数解析器
+parser = argparse.ArgumentParser()
+parser.add_argument('--input_file', type=str, required=True,
+                    help='Path to the input file')
+parser.add_argument('--job_dir', type=str, required=True,
+                    help='Job directory name')
+parser.add_argument('--gpu', type=str, default='2',
+                    help='GPU device number(s) to use. e.g., "2" or "0,1,2"')
+parser.add_argument('--sample_size', type=int, default=1000,
+                    help='Number of samples to process in each batch')
+parser.add_argument('--batch_size', type=int, default=1000,
+                    help='Number of samples to process in each batch')
+args = parser.parse_args()
+start = time.time()
+input_file_path = args.input_file
+job_dir_name = args.job_dir
+sample_size = args.sample_size
+batch_size = args.batch_size
+os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+model_select = "B"  
+user_dir = './newdata/' + str(job_dir_name) + '/'
 
-from Model_Predict_Feature_Extraction import deal_file
-from DLpTCR_server import save_outputfile
+user_dir_Exists = os.path.exists(user_dir)
+if not user_dir_Exists: 
+    os.makedirs(user_dir)
 
-def setup_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='DLpTCR Prediction Tool')
-    parser.add_argument(
-        '--input_file',
-        type=str,
-        required=True,
-        help='Path to the input CSV file containing TCR sequences'
-    )
-    parser.add_argument(
-        '--job_dir',
-        type=str,
-        required=True,
-        help='Directory name for storing job results'
-    )
-    return parser
+full_input_file = pd.read_csv(input_file_path)
+total_samples = len(full_input_file)
+print(f"Total samples in input file: {total_samples}")
 
-def create_job_directory(base_path: str) -> Path:
-    job_dir = Path('./result') / base_path
-    job_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f'Created job directory: {job_dir}')
-    return job_dir
+num_chunks= (total_samples + sample_size - 1) // sample_size
+print(f"Processing data in {num_chunks} batches of size {sample_size}")
 
-def main():
+temp_dir = user_dir + 'temp_batches/'
+if not os.path.exists(temp_dir):
+    os.makedirs(temp_dir)
 
+all_predictions = []
+processed_batches = set()
+
+for chunks_idx in range(num_chunks):
+    print(f"\nProcessing batch {chunks_idx+1}/{num_chunks}")
+
+    start_idx = chunks_idx * sample_size
+    end_idx = min((chunks_idx + 1) * sample_size, total_samples)
+
+    batch_data = full_input_file.iloc[start_idx:end_idx].reset_index(drop=True)
+
+    batch_dir = temp_dir + f'batch_{chunks_idx}/'
+    if not os.path.exists(batch_dir):
+        os.makedirs(batch_dir)
+
+    print(f"Processing batch {chunks_idx+1} with {end_idx-start_idx} samples")
+
+    if chunks_idx in processed_batches:
+        print(f"Batch {chunks_idx+1} already processed, skipping...")
+        continue
+    
     try:
-        parser = setup_parser()
-        args = parser.parse_args()
+        result = deal_file(batch_data, batch_dir, model_select)
 
-        job_dir = create_job_directory(args.job_dir)
+        if len(result) == 4:
+            error_info, TCRA_cdr3, TCRB_cdr3, Epitope = result
+            TCRB_pca_features = None
+        elif len(result) == 5:
+            error_info, TCRA_cdr3, TCRB_cdr3, Epitope, TCRB_pca_features = result
+        else:
+            print(f"Unexpected return value from deal_file for batch {chunks_idx+1}")
+            continue
 
-        input_path = Path(args.input_file)
-        if not input_path.exists():
-            raise FileNotFoundError(f'Input file not found: {input_path}')
+        if error_info != 0:
+            print(f"Error in batch {chunks_idx+1}: error code {error_info}")
+            continue
 
-        model_select = "B"
-        logger.info(f'Processing with model type: {model_select}')
+        if TCRA_cdr3 is None or TCRB_cdr3 is None or Epitope is None:
+            print(f"No valid data in batch {chunks_idx+1}")
+            continue
 
-        error_info, TCRA_cdr3, TCRB_cdr3, Epitope = deal_file(
-            str(input_path), 
-            str(job_dir), 
-            model_select
-        )
+        batch_output = save_outputfile(batch_dir, model_select, batch_data, 
+                                      TCRA_cdr3, TCRB_cdr3, Epitope, TCRB_pca_features, batch_size)
 
-        output_file_path = save_outputfile(
-            str(job_dir), 
-            model_select, 
-            str(input_path),
-            TCRA_cdr3,
-            TCRB_cdr3,
-            Epitope
-        )
-        
-        logger.info(f'Successfully generated output file: {output_file_path}')
-        
+        if batch_output and os.path.exists(batch_output):
+            batch_predictions = pd.read_csv(batch_output)
+            print(f"Batch {chunks_idx+1} predictions shape: {batch_predictions.shape}")
+            all_predictions.append(batch_predictions)
+            processed_batches.add(chunks_idx)
+            print(f"Successfully processed batch {chunks_idx+1}")
+    
     except Exception as e:
-        logger.error(f'Error during execution: {str(e)}')
-        raise
+        print(f"Error processing batch {chunks_idx+1}: {str(e)}")
+        continue
 
-if __name__ == '__main__':
-    main()
+print(f"\nSuccessfully processed {len(processed_batches)} out of {num_chunks} batches")
+print(f"Number of prediction dataframes: {len(all_predictions)}")
+
+if all_predictions:
+    print("\nMerging predictions in order...")
+
+    sorted_predictions = []
+    for chunks_idx in range(num_chunks):
+        batch_output_path = temp_dir + f'batch_{chunks_idx}/TCRB_pred.csv'
+        if os.path.exists(batch_output_path):
+            batch_pred = pd.read_csv(batch_output_path)
+            sorted_predictions.append(batch_pred)
+            print(f"Added batch {chunks_idx+1} to final results")
+
+    if sorted_predictions:
+        final_predictions = pd.concat(sorted_predictions, ignore_index=True)
+        print(f"Final predictions shape: {final_predictions.shape}")
+        final_output_path = user_dir + 'final_predictions.csv'
+        final_predictions.to_csv(final_output_path, index=False)
+        print(f"\nAll batches processed. Final results saved to: {final_output_path}")
+    else:
+        print("\nNo valid predictions to merge.")
+else:
+    print("\nNo valid predictions were generated from any batch.")
+
+
+end = time.time()
+print(f"Total processing time: {end-start:.2f} seconds")
+
+
+
+
+
+
+# import os
+# import argparse
+# #os.environ["CUDA_VISIBLE_DEVICES"] = "0,1,2,3,4"
+# from Model_Predict_Feature_Extraction import *
+# from DLpTCR_server import *
+# import time
+# # 创建参数解析器
+# parser = argparse.ArgumentParser()
+# parser.add_argument('--input_file', type=str, required=True,
+#                     help='Path to the input file')
+# parser.add_argument('--job_dir', type=str, required=True,
+#                     help='Job directory name')
+# parser.add_argument('--gpu', type=str, default='2',
+#                     help='GPU device number(s) to use. e.g., "2" or "0,1,2"')
+
+# args = parser.parse_args()
+# start =time.time()
+# input_file_path = args.input_file
+# job_dir_name = args.job_dir
+# os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+# model_select = "B"  
+# user_dir = './newdata/' + str(job_dir_name) + '/'
+
+# user_dir_Exists = os.path.exists(user_dir)
+# if not user_dir_Exists: 
+#     os.makedirs(user_dir)
+    
+# error_info,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features= deal_file(input_file_path, user_dir, model_select)
+# output_file_path = save_outputfile(user_dir, model_select , input_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features)
+# end =time.time()
+# print(end-start)
