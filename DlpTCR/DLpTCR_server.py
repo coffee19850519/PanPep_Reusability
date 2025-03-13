@@ -41,14 +41,11 @@ import csv
 import pandas as pd
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error和warining信息 3 只显示error信息
-# os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if physical_devices:
     try:
         print("visible GPUs:", physical_devices)
-        tf.config.set_logical_device_configuration(
-            physical_devices[0],
-            [tf.config.LogicalDeviceConfiguration(memory_limit=10240)])
 
     except Exception as e:
         print("Error setting GPU:", e)
@@ -109,7 +106,8 @@ def TCRA_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
 
 # # 3、TCRB预测函数
 
-def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,n):
+def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,batch_size, gpu_id):
+    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
     K.clear_session()
     tf.reset_default_graph()   
     
@@ -130,9 +128,9 @@ def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
     # Y_PRED_CNN = CNN_model.predict_on_batch(CNN_X)
     # Y_PRED_RESNET = RESNET_model.predict_on_batch(RESNET_X)
 
-    Y_PRED_FULL = FULL_model.predict(FULL_X, batch_size=n)
-    Y_PRED_CNN = CNN_model.predict(CNN_X, batch_size=n)
-    Y_PRED_RESNET = RESNET_model.predict(RESNET_X, batch_size=n)
+    Y_PRED_FULL = FULL_model.predict(FULL_X, batch_size=batch_size)
+    Y_PRED_CNN = CNN_model.predict(CNN_X, batch_size=batch_size)
+    Y_PRED_RESNET = RESNET_model.predict(RESNET_X, batch_size=batch_size)
 
     Y_pred_FULL = np.argmin(Y_PRED_FULL, axis=-1)
     Y_pred_CNN = np.argmin(Y_PRED_CNN, axis=-1)
@@ -187,7 +185,7 @@ def pred_A(user_dir):
 
 # # 5、TCRB结果预测(预测为0表示该TCRB与其Epitope结合)
 
-def pred_B(user_dir,TCRB_pca_features,n):
+def pred_B(user_dir,TCRB_pca_features,n, gpu_id):
     TCRB_FULL_M = './model/FULL_B_ALL_pca18.h5'
     TCRB_CNN_M = './model/CNN_B_ALL_pca20.h5'
     TCRB_RESNET_M = './model/RESNET_B_ALL_pca10.h5'
@@ -200,14 +198,14 @@ def pred_B(user_dir,TCRB_pca_features,n):
     TCRB_RESNET_Feature = TCRB_pca_features[10]
 
     TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg  = TCRB_Model_Integration(TCRB_FULL_M,TCRB_CNN_M,TCRB_RESNET_M,
-                                              TCRB_FULL_Feature,TCRB_CNN_Feature,TCRB_RESNET_Feature,n)
+                                              TCRB_FULL_Feature,TCRB_CNN_Feature,TCRB_RESNET_Feature,n, gpu_id)
     
     return TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg
 
 
 # # 6、结果整合，只有TCRA和TCRB同时与其Epitope结合才判定为正样本
 
-def pred_inte_all(user_dir,user_select,TCRB_pca_features,n):
+def pred_inte_all(user_dir,user_select,TCRB_pca_features,n, gpu_id):
     
     
     if user_select == 'A':
@@ -215,7 +213,7 @@ def pred_inte_all(user_dir,user_select,TCRB_pca_features,n):
         return TCRA_Y_pred_ALL,TCRA_Y_pred_ALL_avg
         
     elif user_select == 'B':
-        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg = pred_B(user_dir,TCRB_pca_features,n)
+        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg = pred_B(user_dir,TCRB_pca_features,n, gpu_id)
         return TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg
         
     elif user_select == 'AB':    
@@ -235,7 +233,7 @@ def pred_inte_all(user_dir,user_select,TCRB_pca_features,n):
 
 
 
-def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features,n):
+def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features,n, gpu_id):
     
     
 
@@ -267,14 +265,14 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
         #将DataFrame存储为csv,index表示是否显示行名，default=True
         print('2')
         csv_file = 'TCRA_pred.csv'
-        csv_path = str(user_dir) + str(csv_file)
-        dataframe.to_csv(csv_path,sep=',')
+        csv_path = os.path.join(user_dir, csv_file)
+        dataframe.to_csv(csv_path, sep=',', index=False)
         print('3')
 
     elif user_select == 'B':
         print(user_select)
 
-        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg=  pred_inte_all(user_dir,user_select,TCRB_pca_features,n)
+        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg=  pred_inte_all(user_dir,user_select,TCRB_pca_features,n,gpu_id)
         print('1')
         
         n_TCRB_Y_pred_ALL= list(range(len(TCRB_Y_pred_ALL)))
@@ -298,9 +296,8 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
 
         
         csv_file = 'TCRB_pred.csv'
-        csv_path = str(user_dir) + str(csv_file)
-        
-        dataframe.to_csv(csv_path,sep=',')
+        csv_path = os.path.join(user_dir, csv_file)    
+        dataframe.to_csv(csv_path, sep=',', index=False)
         print('3')
 
         
@@ -335,11 +332,11 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
         #将DataFrame存储为csv,index表示是否显示行名，default=True
         
         csv_file = 'TCRAB_pred.csv'
-        csv_path = str(user_dir) + str(csv_file)
-        dataframe.to_csv(csv_path,sep=',')
+        csv_path = os.path.join(user_dir, csv_file)
+        dataframe.to_csv(csv_path, sep=',', index=False)
         print('3')
         
-    return csv_file
+    return csv_path
       
           
 

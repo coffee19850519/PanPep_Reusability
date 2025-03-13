@@ -5,6 +5,8 @@ import csv
 from numpy import *
 import time
 from sklearn.decomposition import PCA
+from multiprocessing import Pool, cpu_count
+from functools import partial
 
 AminoAcids = 'ARNDCQEGHILKMFPSTWYV'
 
@@ -34,6 +36,30 @@ def pca_code(seqs: list, row=30, n_features=16):
         x.append(t)
     return np.array(x)
 
+def init_worker(n_features,row):
+    global global_aadict, global_row, global_col
+    global_aadict = aaindex1PCAValues(n_features)
+    global_row = row
+    global_col = n_features + 1
+
+def process_seq(seq):
+    n = len(seq)
+    t = np.zeros((global_row, global_col))
+    j = 0
+    while j < n and j < global_row:
+        t[j, :-1] = global_aadict[seq[j]]
+        t[j, -1] = 0
+        j += 1
+    while j < global_row:
+        t[j, -1] = 1
+        j += 1
+    return t
+
+def pca_code_pool(seqs: list, row=30, n_features=16):
+    col = n_features + 1
+    with Pool(initializer=init_worker, initargs=(n_features, row)) as pool:
+        results = pool.map(process_seq, seqs)
+    return np.array(results)
 
 def read_seqs(cdr3, epitope, model=1):
     cdr3_seqs, epit_seqs = [], []
@@ -47,16 +73,24 @@ def read_seqs(cdr3, epitope, model=1):
     return cdr3_seqs, epit_seqs
 
 
+# def load_data(CDR3, Epitope, col=20, row=9, m=1): 
+
+#     new_cdr3_seqs, new_epit_seqs = read_seqs(CDR3, Epitope, m)
+
+#     x_feature = np.ndarray(shape=(len(new_cdr3_seqs), row, col + 1, 2))  
+#     x_feature[:, :, :, 0] = pca_code(new_cdr3_seqs, row, col) 
+#     x_feature[:, :, :, 1] = pca_code(new_epit_seqs, row, col)  
+
+#     return x_feature
+
 def load_data(CDR3, Epitope, col=20, row=9, m=1): 
-
     new_cdr3_seqs, new_epit_seqs = read_seqs(CDR3, Epitope, m)
-
-    x_feature = np.ndarray(shape=(len(new_cdr3_seqs), row, col + 1, 2))  
-    x_feature[:, :, :, 0] = pca_code(new_cdr3_seqs, row, col) 
-    x_feature[:, :, :, 1] = pca_code(new_epit_seqs, row, col)  
-
+    number=len(new_cdr3_seqs)
+    x_feature = np.ndarray(shape=(number, row, col + 1, 2)) 
+    x_feature[:, :, :, 0] = pca_code_pool(new_cdr3_seqs, row=row, n_features=col) 
+    epit_encoding = pca_code([new_epit_seqs[0]], row, col)[0]
+    x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
     return x_feature
-
 
 def AA_ONE_HOT(AA):
     one_hot_dict = {
@@ -172,36 +206,11 @@ def seq2feature(cdr3, epitope):
     return feature_array
 
 
-def deal_file(excel_file_path, user_dir, user_select):
+def deal_file(excel_file_path,user_select):
     error_info = 0
 
-    standard_aa = set('ARNDCQEGHILKMFPSTWYV')
 
-    def is_valid_sequence(seq):
-        if not isinstance(seq, str):
-            return False
-        if seq.lower() == 'none':
-            return True
-        return set(seq.upper()).issubset(standard_aa)
-
-    input_file = excel_file_path
-    print(input_file)
-    original_length = len(input_file)
-
-    input_file = input_file[
-        input_file.TCRA_CDR3.apply(lambda x: is_valid_sequence(x)) &
-        input_file.TCRB_CDR3.apply(lambda x: is_valid_sequence(x)) &
-        input_file.Epitope.apply(lambda x: is_valid_sequence(x))
-    ].reset_index(drop=True)
-    filtered_count = original_length - len(input_file)
-    if filtered_count > 0:
-        print(f"Filtered out {filtered_count} sequences containing non-standard amino acids")
-        print(f"Remaining valid sequences: {len(input_file)}")
-    if len(input_file) == 0:
-        print("Error: No valid sequences remaining after filtering")
-        return 4, None, None, None
-
-    input_count = input_file.count()
+    input_count = excel_file_path.count()
     
     index_num = input_count[1]
     TCRA_cdr3_num = input_count[0]
@@ -209,11 +218,11 @@ def deal_file(excel_file_path, user_dir, user_select):
     Epitope_num = input_count[2]
     
     
-    TCRA_cdr3 = input_file.TCRA_CDR3
+    TCRA_cdr3 = excel_file_path.TCRA_CDR3
 
-    TCRB_cdr3 = input_file.TCRB_CDR3
+    TCRB_cdr3 = excel_file_path.TCRB_CDR3
 
-    Epitope = input_file.Epitope
+    Epitope = excel_file_path.Epitope
 
     full_TCRA_cdr3 = TCRA_cdr3[0:(TCRA_cdr3_num-0)]
 
@@ -237,11 +246,9 @@ def deal_file(excel_file_path, user_dir, user_select):
            
 
             TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
-            np.save(user_dir + 'TCRA_onehot_feature_array', TCRA_onehot_feature_array)
             #print('3.2')
             TCRA_Col = 15  
             TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            np.save(user_dir + 'TCRA_PCA{}_feature_array'.format(TCRA_Col), TCRA_pca_feature)
             #print('3.3')
         else:
             
@@ -268,19 +275,16 @@ def deal_file(excel_file_path, user_dir, user_select):
 
             #print('5.1')
             TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
-            np.save(user_dir + 'TCRA_onehot_feature_array', TCRA_onehot_feature_array)
 
             #print('5.2')
             TCRA_Col = 15  
             TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            np.save(user_dir + 'TCRA_PCA{}_feature_array'.format(TCRA_Col), TCRA_pca_feature)
             #print('5.3')
 
             TCRB_Col = [10, 18, 20]
             for i in TCRB_Col:
                 #print(i)
                 TCRB_pca_feature = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
-                np.save(user_dir + 'TCRB_PCA{}_feature_array'.format(i), TCRB_pca_feature)
 
 
 
