@@ -196,7 +196,7 @@ def few_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
     if not os.path.exists(result_dir):
         os.makedirs(result_dir)
     
-    args = Args(C=config.distillation, L=75, R=config.distillation, update_lr=0.01, update_step_test=3)
+    args = Args(C=config.distillation, L=75, R=config.distillation, update_lr=0.01, update_step_test=1000)
     aa_dict = joblib.load(os.path.join(Project_path, Aa_dict))
     
     test_data = pd.read_csv(config.test_data)
