@@ -45,8 +45,8 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error和warining信息 3 �
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if physical_devices:
     try:
-        print("visible GPUs:", physical_devices)
-
+        for gpu in physical_devices:
+            tf.config.experimental.set_memory_growth(gpu, True)
     except Exception as e:
         print("Error setting GPU:", e)
 # # 2、TCRA预测函数
@@ -106,8 +106,7 @@ def TCRA_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
 
 # # 3、TCRB预测函数
 
-def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,batch_size, gpu_id):
-    os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
+def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,batch_size):
     K.clear_session()
     tf.reset_default_graph()   
     
@@ -129,17 +128,18 @@ def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
     # Y_PRED_RESNET = RESNET_model.predict_on_batch(RESNET_X)
 
     Y_PRED_FULL = FULL_model.predict(FULL_X, batch_size=batch_size)
+    del FULL_X
     Y_PRED_CNN = CNN_model.predict(CNN_X, batch_size=batch_size)
+    del CNN_X
     Y_PRED_RESNET = RESNET_model.predict(RESNET_X, batch_size=batch_size)
+    del RESNET_X
 
     Y_pred_FULL = np.argmin(Y_PRED_FULL, axis=-1)
-    Y_pred_CNN = np.argmin(Y_PRED_CNN, axis=-1)
-    Y_pred_RESNET = np.argmin(Y_PRED_RESNET, axis=-1)
 
 
     Y_pred_ALL_avg = np.zeros([len(Y_pred_FULL),2])
     Y_pred_ALL = np.zeros([len(Y_pred_FULL),2])
-          
+    del Y_pred_FULL
             
             
     for i in range(len(Y_PRED_FULL)):
@@ -153,7 +153,9 @@ def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
         else:
             Y_pred_ALL[i,0] = 0
             Y_pred_ALL[i,1] = 1
-            
+    del Y_PRED_FULL
+    del Y_PRED_CNN
+    del Y_PRED_RESNET      
             
     del FULL_model
     del CNN_model
@@ -185,7 +187,7 @@ def pred_A(user_dir):
 
 # # 5、TCRB结果预测(预测为0表示该TCRB与其Epitope结合)
 
-def pred_B(user_dir,TCRB_pca_features,n, gpu_id):
+def pred_B(user_dir,TCRB_pca_features,n):
     TCRB_FULL_M = './model/FULL_B_ALL_pca18.h5'
     TCRB_CNN_M = './model/CNN_B_ALL_pca20.h5'
     TCRB_RESNET_M = './model/RESNET_B_ALL_pca10.h5'
@@ -196,16 +198,16 @@ def pred_B(user_dir,TCRB_pca_features,n, gpu_id):
     TCRB_FULL_Feature = TCRB_pca_features[18]
     TCRB_CNN_Feature= TCRB_pca_features[20]
     TCRB_RESNET_Feature = TCRB_pca_features[10]
-
+    del TCRB_pca_features
     TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg  = TCRB_Model_Integration(TCRB_FULL_M,TCRB_CNN_M,TCRB_RESNET_M,
-                                              TCRB_FULL_Feature,TCRB_CNN_Feature,TCRB_RESNET_Feature,n, gpu_id)
+                                              TCRB_FULL_Feature,TCRB_CNN_Feature,TCRB_RESNET_Feature,n)
     
     return TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg
 
 
 # # 6、结果整合，只有TCRA和TCRB同时与其Epitope结合才判定为正样本
 
-def pred_inte_all(user_dir,user_select,TCRB_pca_features,n, gpu_id):
+def pred_inte_all(user_dir,user_select,TCRB_pca_features,n):
     
     
     if user_select == 'A':
@@ -213,7 +215,7 @@ def pred_inte_all(user_dir,user_select,TCRB_pca_features,n, gpu_id):
         return TCRA_Y_pred_ALL,TCRA_Y_pred_ALL_avg
         
     elif user_select == 'B':
-        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg = pred_B(user_dir,TCRB_pca_features,n, gpu_id)
+        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg = pred_B(user_dir,TCRB_pca_features,n)
         return TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg
         
     elif user_select == 'AB':    
@@ -233,7 +235,7 @@ def pred_inte_all(user_dir,user_select,TCRB_pca_features,n, gpu_id):
 
 
 
-def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features,n, gpu_id):
+def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRB_pca_features,n):
     
     
 
@@ -272,7 +274,7 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
     elif user_select == 'B':
         print(user_select)
 
-        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg=  pred_inte_all(user_dir,user_select,TCRB_pca_features,n,gpu_id)
+        TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg=  pred_inte_all(user_dir,user_select,TCRB_pca_features,n)
         print('1')
         
         n_TCRB_Y_pred_ALL= list(range(len(TCRB_Y_pred_ALL)))
@@ -293,7 +295,10 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
                 
         print('2')
         dataframe = pd.DataFrame({'TCRB_CDR3':TCRB_cdr3,'Epitope':Epitope,'Predict':n_TCRB_Y_pred_ALL,'Probability (predicted as a positive sample)':n_TCRB_Y_acc_ALL})
-
+        dataframe['TCRB_CDR3'] = dataframe['TCRB_CDR3'].astype(str)
+        dataframe['Epitope'] = dataframe['Epitope'].astype(str)
+        dataframe['Predict'] = dataframe['Predict'].astype(str)
+        dataframe['Probability (predicted as a positive sample)'] = dataframe['Probability (predicted as a positive sample)'].astype(np.float32)
         
         csv_file = 'TCRB_pred.csv'
         csv_path = os.path.join(user_dir, csv_file)    

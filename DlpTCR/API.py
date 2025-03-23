@@ -10,8 +10,6 @@ import time
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_file', type=str, required=True,
                     help='Path to the input file')
-parser.add_argument('--gpu', type=str, default='0',
-                    help='GPU device number(s) to use. e.g., "2" or "0,1,2"')
 parser.add_argument('--sample_size', type=int, default=1000,
                     help='Number of samples to process in each chunk')
 parser.add_argument('--batch_size', type=int, default=1000,
@@ -22,9 +20,8 @@ input_file_path = args.input_file
 job_dir_name = os.path.basename(input_file_path)[:-4]
 sample_size = args.sample_size
 batch_size = args.batch_size
-os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 model_select = "B"  
-user_dir = './newdata/' + str(job_dir_name) + '/'
+user_dir = './newdata/zero/' + str(job_dir_name) + '/'
 
 user_dir_Exists = os.path.exists(user_dir)
 if not user_dir_Exists: 
@@ -41,7 +38,7 @@ def validate_sequence(seq):
 
 
 
-def process_chunk(chunk_idx, batch_data, temp_dir, model_select, batch_size, gpu):
+def process_chunk(chunk_idx, batch_data, temp_dir, model_select, batch_size):
     batch_dir = os.path.join(temp_dir, f'batch_{chunk_idx}')
     os.makedirs(batch_dir, exist_ok=True)
     print(f"\nProcessing chunk {chunk_idx}")
@@ -64,7 +61,7 @@ def process_chunk(chunk_idx, batch_data, temp_dir, model_select, batch_size, gpu
         batch_output = save_outputfile(
             batch_dir, model_select, batch_data,
             TCRA_cdr3, TCRB_cdr3, Epitope, 
-            TCRB_pca_features, batch_size, gpu
+            TCRB_pca_features, batch_size
         )
         if batch_output and os.path.exists(batch_output):
             print(f"Reading results from: {batch_output}")
@@ -86,10 +83,11 @@ def main():
     os.makedirs(user_dir, exist_ok=True)
 
     try:
-        df = pd.read_csv(input_file_path, converters={'TCRB_CDR3': validate_sequence})
-        full_input_file = df.dropna(subset=['TCRB_CDR3'])
-        del df 
-        
+        df = pd.read_csv(input_file_path,
+                         converters={'TCRB_CDR3': validate_sequence, 'Epitope': validate_sequence})
+        full_input_file = df.dropna(subset=['TCRB_CDR3', 'Epitope'])
+        del df
+
         total_samples = len(full_input_file)
         num_chunks = (total_samples + sample_size - 1) // sample_size
         print(f"Processing {total_samples} samples in {num_chunks} chunks")
@@ -101,7 +99,7 @@ def main():
             
             batch_data = full_input_file.iloc[start_idx:end_idx].reset_index(drop=True)
             result = process_chunk(chunk_idx, batch_data, user_dir, model_select, 
-                                 batch_size, args.gpu)
+                                 batch_size)
             
             if result is not None:
                 sorted_predictions.append(result)
@@ -113,8 +111,15 @@ def main():
 
         if sorted_predictions:
             final_predictions = pd.concat(sorted_predictions, ignore_index=True)
-            final_output_path = os.path.join(user_dir, 'final_predictions.csv')
-            final_predictions.to_csv(final_output_path, index=False)
+            final_output_path = os.path.join(user_dir, 'final_predictions.parquet')
+
+            final_predictions['TCRB_CDR3'] = final_predictions['TCRB_CDR3'].astype(str)
+            final_predictions['Epitope'] = final_predictions['Epitope'].astype(str)
+            final_predictions['Predict'] = final_predictions['Predict'].astype(str)
+            final_predictions['Probability (predicted as a positive sample)'] = final_predictions[
+                'Probability (predicted as a positive sample)'].astype(np.float32)
+
+            final_predictions.to_parquet(final_output_path, engine='pyarrow', index=False, compression= 'gzip')
             print(f"Final results saved to: {final_output_path}")
         else:
             print("No valid predictions were generated", "WARNING")
