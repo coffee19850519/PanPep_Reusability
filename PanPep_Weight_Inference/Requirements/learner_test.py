@@ -180,6 +180,9 @@ class Learner(nn.Module):
 
         # get mask index
         mask = torch.abs(x).sum(dim=-1) == 0
+        for i, (name, param) in enumerate(self.config):
+            if return_embedding and i == len(self.config) - 1 and name == 'linear':
+                return x  
         for name, param in self.config:
 
             # implementation of conv2d layer

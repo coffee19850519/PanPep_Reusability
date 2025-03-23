@@ -287,94 +287,71 @@ class Memory_Meta(nn.Module):
 
     def finetunning(self, peptide, x_spt, y_spt, x_qry, balance_loss=False, return_params=False):
         """
-        this is the function used for fine-tuning on support set and test on the query set
+        Fine-tune the model on the support set and test on the query set.
 
         Parameters:
-            param peptide: the embedding of peptide
-            param x_spt: the embedding of support set
-            param y_spt: the labels of support set
-            param x_qry: the embedding of query set
+            peptide: Peptide embedding
+            x_spt: Support set embeddings
+            y_spt: Support set labels
+            x_qry: Query set embeddings
+            balance_loss: Whether to balance the loss with class weights
+            return_params: Whether to return updated parameters
 
-        Return:
-            the binding scores for the TCRs in the query set in the few-shot setting
+        Returns:
+            Binding scores for the TCRs in the query set in the few-shot setting.
         """
-        print(f"x_qry shape: {x_qry.shape}")  # 输入数据的维度
-        print(f"x_qry size: {x_qry.size(0)}")  # batch size
         querysz = x_qry.size(0)
-        print(f"querysz: {querysz}")
         start = []
         end = []
 
-        # in order not to ruin the state of running_mean/variance and bn_weight/bias
-        # we finetunning on the copied model instead of self.net
-        net = deepcopy(self.net)
+        net1 = deepcopy(self.net)
 
-        # 1. run the i-th task and compute loss for k=0
-        logits = net(x_spt)
+        logits = net1(x_spt)
         if balance_loss:
             loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
         else:
             loss = F.cross_entropy(logits, y_spt)
-        grad = torch.autograd.grad(loss, net.parameters(), retain_graph=True)
-        fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, net.parameters())))
 
-        # the loss and accuracy before first update
+        grad = torch.autograd.grad(loss, net1.parameters(), retain_graph=True)
+        fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, net1.parameters())))
+
         with torch.no_grad():
-
-            # predict logits
-            logits_q = net(x_qry, net.parameters(), bn_training=False)
-
-            # calculate the scores based on softmax
+            logits_q = net1(x_qry, net1.parameters(), bn_training=False)
             pred_q = F.softmax(logits_q, dim=1)
             start.append(pred_q[:, 1].cpu().numpy())
 
-        # the loss and accuracy after the first update
         if self.update_step_test == 1:
-
-            # predict logits
-            logits_q = net(x_qry, fast_weights, bn_training=False)
-
-            # calculate the scores based on softmax
+            logits_q = net1(x_qry, fast_weights, bn_training=False)
             pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
         else:
             with torch.no_grad():
-
-                # predict logits
-                logits_q = net(x_qry, fast_weights, bn_training=False)
-
-                # calculate the scores based on softmax
+                logits_q = net1(x_qry, fast_weights, bn_training=False)
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
 
             for k in range(1, self.update_step_test):
-                # 1. run the i-th task and compute loss for k=1~K-1
-                logits = net(x_spt, fast_weights, bn_training=True)
+                logits = net1(x_spt, fast_weights, bn_training=True)
                 if balance_loss:
                     loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
                 else:
                     loss = F.cross_entropy(logits, y_spt)
 
-                # 2. compute grad on theta_pi
                 grad = torch.autograd.grad(loss, fast_weights)
-
-                # 3. theta_pi = theta_pi - train_lr * grad
                 fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, fast_weights)))
 
-
-                # 执行forward
-                logits_q = net(x_qry, fast_weights, bn_training=False)
-
+                logits_q = net1(x_qry, fast_weights, bn_training=False)
 
                 with torch.no_grad():
-                    # calculate the scores based on softmax
                     pred_q = F.softmax(logits_q, dim=1)
                     print(f"pred_q shape: {pred_q.shape}")
                     print(f"pred_q[:, 1] shape: {pred_q[:, 1].shape}")
 
             end.append(pred_q[:, 1].cpu().numpy())
-        del net
 
         if return_params:
-            return end, fast_weights
+            with torch.no_grad():
+                for param, fast_weight in zip(net1.parameters(), fast_weights):
+                    param.copy_(fast_weight)
+            return end, net1
         return end
 
     def get_kshot_data(self, x_spts, y_spts):
@@ -556,22 +533,27 @@ class Memory_Meta(nn.Module):
                 end.append(pred[:, 1])
         return end
 
-    def inference_with_params(self, x_qry, finetuned_params):
-        """
-        使用指定参数进行推理
-        Args:
-            x_qry: 查询集数据
-            finetuned_params: 微调后的模型参数
-        """
-        net = deepcopy(self.net)
+    def inference_with_params(self, x_qry, net):
         
         with torch.no_grad():
-            logits_q = net(x_qry, finetuned_params, bn_training=False)
+            logits_q = net(x_qry, net.parameters(), bn_training=False)
             pred_q = F.softmax(logits_q, dim=1)
             end = [pred_q[:, 1].cpu().numpy()]
-        
-        del net
         return end
+    
+
+    def inference_with_params_embedding(self, x_qry, net):
+
+        with torch.no_grad():
+            embeddings = net(x_qry,net.parameters(), bn_training=False, return_embedding=True)
+            logits_q = net(x_qry,net.parameters(), bn_training=False)
+            pred_q = F.softmax(logits_q, dim=1)
+            predictions = pred_q[:, 1].cpu().numpy()
+
+        return {
+            'embeddings': embeddings.cpu().numpy(),
+            'predictions': predictions
+        }
     
     def check_frozen_layers(self, net):
         print("\n=== Layer Freezing Status ===")
