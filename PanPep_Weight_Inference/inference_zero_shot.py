@@ -21,84 +21,29 @@ def parse_args():
     parser = argparse.ArgumentParser(description='Zero-shot inference')
     parser.add_argument('--gpu', type=str, default='0', help='GPU device IDs separated by comma (e.g., "0,1,2")')
     parser.add_argument('--distillation', type=int, default=3, help='Distillation number')
-    parser.add_argument('--upper_limit', type=int, default=160000, help='Upper limit for window size')
+    parser.add_argument('--batch_size', type=int, default=400000, help='Upper limit for batch size')
     parser.add_argument('--test_data', type=str, 
-                       default='/public/home/wxy/PanPep_reusability_new/zero/zero-b.csv',
+                       default='/public/home/wxy/Panpep1/zero_shot.csv',
                        help='Path to test data CSV')
     parser.add_argument('--negative_data', type=str,
-                       default="/public/home/wxy/PanPep_reusability_new/zero/pooling_tcrb.txt",
+                       default="/public/home/wxy/Panpep1/Control_dataset.txt",
                        help='Path to negative TCR data')
     parser.add_argument('--model_path', type=str,
                        default='/public/home/wxy/Panpep1/Requirements',
                        help='Path to model')
     parser.add_argument('--result_dir', type=str,
-                       default='resulalphabeta/panpep/zero-b',
+                       default='result/zero-test',
                        help='Directory for results')
     parser.add_argument('--peptide_encoding', type=str,
-                        default='/public/home/wxy/PanPep_reusability_new/new_data/HLA-A-beta-original-github/encodings/peptide_ab.npz',
+                        default='/public/home/wxy/Panpep1/encoding/peptide_b.npz',
                         help='Path to peptide encoding file')
     parser.add_argument('--tcr_encoding', type=str,
-                        default='/public/home/wxy/PanPep_reusability_new/new_data/HLA-A-beta-original-github/encodings/tcr_ab.npz',
+                        default='/public/home/wxy/Panpep1/encoding/peptide_b.npz',
                         help='Path to TCR encoding file')
+    # parser.add_argument('--tcr_encoding', type=str,
+    #                     default='/public/home/wxy/Panpep1/encoding/tcr_b.npz',
+    #                     help='Path to TCR encoding file')
     return parser.parse_args()
-
-def process_peptide(pep, test_data, test_data_tcr_negative, model, aa_dict, args, config, device, result_dir):
-    pep_start_time = time.time()
-    print(f"\nProcessing peptide: {pep} on device: {device}")
-    
-    csv_file_path = os.path.join(result_dir, f"{pep}.csv")
-    if os.path.exists(csv_file_path):
-        print(f"Skipping peptide {pep} - CSV file already exists")
-        return
-    
-    positive_tcr = list(test_data[test_data['peptide'] == pep]['binding_TCR'])
-    negative_tcr = list(set(test_data_tcr_negative).difference(set(positive_tcr)))
-    all_tcrs = positive_tcr + negative_tcr
-    all_labels = [1] * len(positive_tcr) + [0] * len(negative_tcr)
-    
-    window_count = math.ceil(len(all_tcrs) / config.upper_limit)
-    
-    breakpoint = 0
-    if os.path.exists(csv_file_path):
-        breakpoint = len(list(set(pd.read_csv(csv_file_path)['Window'])))
-    
-    for i in range(breakpoint, window_count):
-        window_start_time = time.time()
-        print(f"\nProcessing Window {i+1}/{window_count} for peptide {pep} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        
-        start_idx = i * config.upper_limit
-        end_idx = min((i + 1) * config.upper_limit, len(all_tcrs))
-        current_tcrs = all_tcrs[start_idx:end_idx]
-        current_labels = all_labels[start_idx:end_idx]
-        
-        peptide_embedding, x_qry = zero_task_embedding(
-            pep, current_tcrs, aa_dict,
-            peptide_encoding_dict, tcr_encoding_dict
-        )
-        
-        with torch.no_grad():
-            scores = model.meta_forward_score(
-                peptide_embedding.to(device),
-                x_qry.to(device)
-            )
-        
-        output = pd.DataFrame({
-            "Window": i,
-            'CDR3': current_tcrs,
-            'Score': scores[0].cpu().numpy(),
-            'Label': current_labels
-        })
-        
-        if not os.path.exists(csv_file_path):
-            output.to_csv(csv_file_path, index=False, header=True)
-        else:
-            output.to_csv(csv_file_path, mode="a", index=False, header=False)
-        
-        window_time = time.time() - window_start_time
-        print(f"Window time: {window_time:.2f}s, Progress: {(i+1)/window_count*100:.1f}%")
-    
-    pep_time = time.time() - pep_start_time
-    print(f"\nPeptide {pep} time: {pep_time:.2f}s")
 
 def zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
     total_start_time = time.time()
@@ -135,22 +80,16 @@ def zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
         all_tcrs = positive_tcr + negative_tcr
         all_labels = [1] * len(positive_tcr) + [0] * len(negative_tcr)
         
-        window_count = math.ceil(len(all_tcrs) / config.upper_limit)
+        batch_count = math.ceil(len(all_tcrs) / config.batch_size)
         
         breakpoint = 0
-        with file_lock:
-            if os.path.exists(csv_file_path):
-                try:
-                    breakpoint = len(list(set(pd.read_csv(csv_file_path)['Window'])))
-                except:
-                    breakpoint = 0
-        
-        for i in range(breakpoint, window_count):
-            window_start_time = time.time()
-            print(f"\nProcessing Window {i+1}/{window_count} for peptide {pep} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+   
+        for i in range(breakpoint, batch_count):
+            batch_start_time = time.time()
+            print(f"\nProcessing batch {i+1}/{batch_count} for peptide {pep} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
             
-            start_idx = i * config.upper_limit
-            end_idx = min((i + 1) * config.upper_limit, len(all_tcrs))
+            start_idx = i * config.batch_size
+            end_idx = min((i + 1) * config.batch_size, len(all_tcrs))
             current_tcrs = all_tcrs[start_idx:end_idx]
             current_labels = all_labels[start_idx:end_idx]
             
@@ -164,24 +103,27 @@ def zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
                     peptide_embedding.to(device),
                     x_qry.to(device)
                 )
-            
+            scores = scores[0].cpu()
             output = pd.DataFrame({
-                "Window": i,
-                'CDR3': current_tcrs,
-                'Score': scores[0].cpu().numpy(),
-                'Label': current_labels
+                'CDR3': pd.Series(current_tcrs).astype(str),
+                'Score': np.array(scores, dtype=np.float32),  # scores is now on CPU
+                'Label': pd.Series(current_labels).astype(np.int8)
             })
             with file_lock:
                 try:
-                    if not os.path.exists(csv_file_path):
-                        output.to_csv(csv_file_path, index=False, header=True)
+                    parquet_file_path = os.path.splitext(csv_file_path)[0] + '.parquet'
+                    
+                    if not os.path.exists(parquet_file_path):
+                        output.to_parquet(parquet_file_path, engine='pyarrow')
                     else:
-                        output.to_csv(csv_file_path, mode="a", index=False, header=False)
+                        existing_df = pd.read_parquet(parquet_file_path)
+                        combined_df = pd.concat([existing_df, output], ignore_index=True)
+                        combined_df.to_parquet(parquet_file_path, engine='pyarrow')
                 except Exception as e:
-                    print(f"Error writing to file {csv_file_path}: {e}")
+                    print(f"Error writing to file {parquet_file_path}: {e}")
             
-            window_time = time.time() - window_start_time
-            print(f"Window processing time: {window_time:.2f}s, Progress: {(i+1)/window_count*100:.1f}%")
+            batch_time = time.time() - batch_start_time
+            print(f"batch processing time: {batch_time:.2f}s, Progress: {(i+1)/batch_count*100:.1f}%")
         
         pep_time = time.time() - pep_start_time
         print(f"\nPeptide {pep} processing time: {pep_time:.2f}s")

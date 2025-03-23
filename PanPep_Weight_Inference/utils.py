@@ -180,12 +180,12 @@ def get_num(dict1):
     return num
 
 
-def get_model(args, mdoel_config, model_path, device):
+def get_model(args, model_config, model_path, device):
     '''
     get model
     '''
     # Initialize a new model
-    model = Memory_Meta(args, mdoel_config).to(device)
+    model = Memory_Meta(args, model_config).to(device)
     if os.path.exists(os.path.join(model_path, 'model.pt')):
         # Load the pretrained model
         model.load_state_dict(torch.load(os.path.join(model_path, 'model.pt'), map_location=device))
@@ -203,7 +203,6 @@ def get_model(args, mdoel_config, model_path, device):
     model.Memory_module.memory.Query.weight = query[0]
     model.Memory_module.memory.Query.bias = query[1]
     return model
-
 
 def aamapping(TCRSeq, encode_dim, aa_dict):
     """
@@ -407,18 +406,27 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
 
     return peptides, support_x, torch.LongTensor(support_y), query_x
 
+# ##优化，difference
+# def get_query_data(all_ranking_data, k_shot_data, k_shot):
 
+#     F_data = [[], []]
+#     F_data[0].extend([j for j in all_ranking_data[0] if j not in k_shot_data[0]])
+#     index_p = [k for k, v in enumerate(all_ranking_data[1]) if v == 1 or v == "1"]
+#     index_n = [k for k, v in enumerate(all_ranking_data[1]) if v == 0 or v == "0"]
+#     F_data[1].extend([1] * (len(index_p) - k_shot))
+#     F_data[1].extend([0] * (len(index_n) - k_shot))
+
+#     return F_data
 def get_query_data(all_ranking_data, k_shot_data, k_shot):
-
-    F_data = [[], []]
-    F_data[0].extend([j for j in all_ranking_data[0] if j not in k_shot_data[0]])
-    index_p = [k for k, v in enumerate(all_ranking_data[1]) if v == 1 or v == "1"]
-    index_n = [k for k, v in enumerate(all_ranking_data[1]) if v == 0 or v == "0"]
-    F_data[1].extend([1] * (len(index_p) - k_shot))
-    F_data[1].extend([0] * (len(index_n) - k_shot))
-
+    mask = ~np.isin(all_ranking_data[0], k_shot_data[0])
+    
+    # 直接用掩码选择元素
+    F_data = [
+        np.array(all_ranking_data[0])[mask].tolist(),
+        np.array(all_ranking_data[1])[mask].tolist()
+    ]
+    
     return F_data
-
 def get_query_data_more_data(all_ranking_data, k_shot_data, k_shot,update_step_test):
 
     F_data = [[], []]
@@ -430,47 +438,34 @@ def get_query_data_more_data(all_ranking_data, k_shot_data, k_shot,update_step_t
 
     return F_data
 def load_kshot_more_data(all_ranking_data, k_shot, pep, data_dir, result, update_step_test):
-    """
-    加载k-shot数据：
-    - 保持CSV中的所有正样本和负样本
-    - 从all_ranking_data中随机选择额外的负样本(需要的总数-2)
-    """
     data = [[], []]
-    
-    # 构建文件路径
+
     file_name = f"k_shot_{pep}.csv"
     file_path = os.path.join(data_dir, file_name)
     
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"找不到文件: {file_path}")
-    
-    # 读取CSV中的所有样本
+        raise FileNotFoundError(f"can't find file: {file_path}")
+
     df = pd.read_csv(file_path)
-    
-    # 添加CSV中的正样本
+
     positive_samples = df[df['label'] == 1]
     data[0].extend(positive_samples['tcr'].tolist())
     data[1].extend([1] * len(positive_samples))
-    
-    # 添加CSV中的负样本
+
     negative_samples = df[df['label'] == 0]
     data[0].extend(negative_samples['tcr'].tolist())
     data[1].extend([0] * len(negative_samples))
-    
-    # 计算需要额外选择的负样本数量
+
     additional_negative_needed = update_step_test * k_shot - len(negative_samples)
-    
-    # 从all_ranking_data中选择额外的负样本
+
     if additional_negative_needed > 0:
         index_n = [k for k, v in enumerate(all_ranking_data[1]) if v == 0 or v == "0"]
         negative_support_idx = random.sample(index_n, additional_negative_needed)
-        
-        # 添加额外选择的负样本
+
         for idx in negative_support_idx:
             data[0].append(all_ranking_data[0][idx])
             data[1].append(0)
-    
-    # 保存更新后的数据
+
     output = pd.DataFrame({'tcr': data[0], 'label': data[1]})
     output.to_csv(os.path.join(result, "k_shot_" + pep + ".csv"), index=False)
     
@@ -499,34 +494,20 @@ def save_kshot_data_more_data(all_ranking_data, k_shot, pep, result,update_step_
     
     return data
 
-def load_kshot_data(pep, data_dir):
-    """
-    从指定目录加载特定肽段的k-shot数据
-    
-    参数:
-    pep: 肽段名称（如 'CLAVHECFV'）
-    data_dir: 包含k-shot数据文件的目录路径
-    
-    返回:
-    data: 列表 [TCR序列列表, 标签列表]
-    """
-    # 初始化数据结构
-    data = [[], []]  # [TCR列表, 标签列表]
-    
-    # 构建文件路径
+def load_support_data(pep, data_dir):
+
+    data = [[], []]
+
     file_name = f"k_shot_{pep}.csv"
     file_path = os.path.join(data_dir, file_name)
-    
-    # 检查文件是否存在
+
     if not os.path.exists(file_path):
-        raise FileNotFoundError(f"找不到文件: {file_path}")
-    
-    # 读取CSV文件
+        raise FileNotFoundError(f"can't find file: {file_path}")
+
     df = pd.read_csv(file_path)
-    
-    # 按照原格式构建数据
-    data[0] = df['tcr'].tolist()  # TCR序列列表
-    data[1] = df['label'].tolist()  # 标签列表
+
+    data[0] = df['tcr'].tolist()
+    data[1] = df['label'].tolist()
     
     return data
 
@@ -552,7 +533,7 @@ def load_kshot_data(pep, data_dir):
 
 #     return data
 
-def save_kshot_data(all_ranking_data, k_shot, pep, result, chain_type=None):
+def save_support_data(all_ranking_data, k_shot, pep, result, chain_type=None):
     """
     保存k-shot数据，如果提供了chain_type，文件名中会包含该信息
     
@@ -578,8 +559,6 @@ def save_kshot_data(all_ranking_data, k_shot, pep, result, chain_type=None):
         data[1].append(0)
 
     output = pd.DataFrame({'tcr': data[0], 'label': data[1]})
-    
-    # 根据是否提供chain_type决定文件名
     if chain_type:
         filename = f"k_shot_{pep}_{chain_type}.csv"
     else:

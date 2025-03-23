@@ -7,38 +7,39 @@ import math
 import numpy as np
 import torch
 import pandas as pd
+import random, sys
 import argparse
 from multiprocessing import Process, Manager, Lock
 
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
 sys.path.append(PROJECT_ROOT)
 
-from utils import Args, get_model, Model_config, Project_path, Aa_dict, task_embedding, load_kshot_data, get_query_data, save_kshot_data
+from utils import Args, get_model, Model_config, Project_path, Aa_dict, task_embedding, load_support_data, get_query_data, save_support_data
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test ranking model')
     parser.add_argument('--gpu', type=str, default='0', help='GPU device IDs separated by comma (e.g., "0,1,2")')
     parser.add_argument('--distillation', type=int, default=3, help='Distillation number')
-    parser.add_argument('--upper_limit', type=int, default=200000, help='Upper limit for window size')
-    parser.add_argument('--k_shot', type=int, default=2, help='K-shot value')
-    parser.add_argument('--test_data', type=str, default='/public/home/wxy/PanPep_reusability_new/few/few-b.csv', 
+    parser.add_argument('--upper_limit', type=int, default=20000, help='Upper limit for batch size')
+    parser.add_argument('--support', type=int, default=2, help='K-shot value')
+    parser.add_argument('--test_data', type=str, default='/public/home/wxy/Panpep1/few-shot.csv', 
                         help='Path to test data CSV')
     parser.add_argument('--negative_data', type=str, 
-                        default="/public/home/wxy/PanPep_reusability_new/few/pooling_tcrb.txt",
+                        default="/public/home/wxy/Panpep1/Control_dataset.txt",
                         help='Path to negative TCR data')
     parser.add_argument('--model_path', type=str, 
                         default='/public/home/wxy/Panpep1/Requirements',
                         help='Path to model')
     parser.add_argument('--result_dir', type=str, 
-                        default='resulalphabeta/panpepfew-b',
+                        default='result/few_reproduction111',
                         help='Directory for results')
-    parser.add_argument('--kshot_dir', type=str, default=None,
+    parser.add_argument('--support_dir', type=str, default=None,
                         help='Directory for k-shot data. If not provided, k-shot data will be generated.')
     parser.add_argument('--peptide_encoding', type=str,
-                        default='/public/home/wxy/PanPep_reusability_new/new_data/HLA-A-beta-original-github/encodings/peptide_ab.npz',
+                        default='/public/home/wxy/Panpep1/encoding/peptide_b.npz',
                         help='Path to peptide encoding file')
     parser.add_argument('--tcr_encoding', type=str,
-                        default='/public/home/wxy/PanPep_reusability_new/new_data/HLA-A-beta-original-github/encodings/tcr_ab.npz',
+                        default='/public/home/wxy/Panpep1/encoding/tcr_b.npz',
                         help='Path to TCR encoding file')
     return parser.parse_args()
 
@@ -70,44 +71,33 @@ def process_peptide_with_lock(pep, test_data, test_data_tcr_negative, model, aa_
     all_labels = [1] * len(positive_tcr) + [0] * len(negative_tcr)
     all_ranking_data = {pep: [all_tcrs, all_labels]}
 
-    window_count = math.ceil((len(all_ranking_data[pep][1]) - 2*config.k_shot) / config.upper_limit)
-    print(f"Total windows: {window_count}")
+    batch_count = math.ceil((len(all_ranking_data[pep][1]) - 2*config.support) / config.upper_limit)
+    print(f"Total batches: {batch_count}")
     
     breakpoint = 0
-    with file_lock:
-        if os.path.exists(csv_file_path):
-            try:
-                breakpoint = len(list(set(pd.read_csv(csv_file_path)['Window'])))
-                print(f"Resuming from window {breakpoint}/{window_count}")
-            except:
-                breakpoint = 0
-                print("Starting from window 0")
-        else:
-            print("Starting from window 0")
-
-    if config.kshot_dir:
-        print(f"Loading k-shot data from: {config.kshot_dir}")
-        k_shot_data = load_kshot_data(pep, config.kshot_dir)
+    if config.support_dir:
+        print(f"Loading k-shot data from: {config.support_dir}")
+        support_data = load_support_data(pep, config.support_dir)
     else:
         with file_lock:
             print(f"Generating new k-shot data")
-            k_shot_data = save_kshot_data(all_ranking_data[pep], config.k_shot, pep, result_dir)
+            support_data = save_support_data(all_ranking_data[pep], config.support, pep, result_dir)
 
-    all_query_data = get_query_data(all_ranking_data[pep], k_shot_data, config.k_shot)
+    all_query_data = get_query_data(all_ranking_data[pep], support_data, config.support)
     print(f"Query data size: {len(all_query_data[0])}")
 
-    for i in range(breakpoint, window_count):
-        window_start_time = time.time()
-        print(f"\nProcessing Window {i+1}/{window_count} for peptide {pep} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    for i in range(breakpoint, batch_count):
+        batch_start_time = time.time()
+        print(f"\nProcessing batch {i+1}/{batch_count} for peptide {pep} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-        if i != window_count - 1:
+        if i != batch_count - 1:
             current_slice = all_query_data[0][i * config.upper_limit : (i+1) * config.upper_limit]
             current_labels = all_query_data[1][i * config.upper_limit : (i+1) * config.upper_limit]
         else:
             current_slice = all_query_data[0][i * config.upper_limit:]
             current_labels = all_query_data[1][i * config.upper_limit:]
         
-        F_data = [k_shot_data[0], k_shot_data[1], current_slice, current_labels]
+        F_data = [support_data[0], support_data[1], current_slice, current_labels]
 
         peptide_embedding, x_spt, y_spt, x_qry = task_embedding(
             pep, F_data, aa_dict, peptide_encoding_dict, tcr_encoding_dict
@@ -116,48 +106,45 @@ def process_peptide_with_lock(pep, test_data, test_data_tcr_negative, model, aa_
         if i == 0:
             print("Finetuning model...")
             with file_lock:
-                if not os.path.exists(finetuned_model_path):
-                    end, finetuned_params = model.finetunning(
-                        peptide_embedding[0].to(device), 
-                        x_spt[0].to(device), 
-                        y_spt[0].to(device), 
-                        x_qry[0].to(device),
-                        return_params=True
-                    )
-                    torch.save(finetuned_params, finetuned_model_path)
-                else:
-                    print("Using existing finetuned model parameters")
-                    with torch.no_grad():
-                        end = model.inference_with_params(
-                            x_qry[0].to(device), 
-                            torch.load(finetuned_model_path)
-                        )
+
+                end, finetuned_net = model.finetunning(
+                    peptide_embedding[0].to(device), 
+                    x_spt[0].to(device), 
+                    y_spt[0].to(device), 
+                    x_qry[0].to(device),
+                    return_params=True
+                )
+                torch.save(finetuned_net, finetuned_model_path)
+
         else:
             print("Using finetuned model for inference...")
             with torch.no_grad():
                 end = model.inference_with_params(
                     x_qry[0].to(device), 
-                    torch.load(finetuned_model_path)
+                    finetuned_net
                 )
 
         output = pd.DataFrame({
-            "Window": i,
-            'CDR3': F_data[2], 
-            'Score': list(end[0]), 
-            'Label': F_data[3]
+            'CDR3': pd.Series(F_data[2]).astype(str),
+            'Score': np.array(end[0], dtype=np.float32),
+            'Label': pd.Series(F_data[3]).astype(np.int8)
         })
         
         with file_lock:
             try:
-                if not os.path.exists(csv_file_path):
-                    output.to_csv(csv_file_path, index=False, header=True)
+                parquet_file_path = os.path.splitext(csv_file_path)[0] + '.parquet'
+                
+                if not os.path.exists(parquet_file_path):
+                    output.to_parquet(parquet_file_path, engine='pyarrow')
                 else:
-                    output.to_csv(csv_file_path, mode="a", index=False, header=False)
+                    existing_df = pd.read_parquet(parquet_file_path)
+                    combined_df = pd.concat([existing_df, output], ignore_index=True)
+                    combined_df.to_parquet(parquet_file_path, engine='pyarrow')
             except Exception as e:
-                print(f"Error writing to file {csv_file_path}: {e}")
+                print(f"Error writing to file {parquet_file_path}: {e}")
         
-        window_time = time.time() - window_start_time
-        print(f"Window processing time: {window_time:.2f}s, Progress: {(i+1)/window_count*100:.1f}%")
+        batch_time = time.time() - batch_start_time
+        print(f"batch processing time: {batch_time:.2f}s, Progress: {(i+1)/batch_count*100:.1f}%")
     
     pep_time = time.time() - pep_start_time
     print(f"\nTotal time for peptide {pep}: {pep_time:.2f}s")
