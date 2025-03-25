@@ -167,18 +167,17 @@ def process_file(dataset, input_file, output_dir):
                 output = model.validation_step(batch, 0)
                 if output:
                     outputs.extend(output['y_hat'].cpu().numpy().tolist())
-        
-        output_filename = f'{os.path.splitext(file_name)[0]}_predicted.csv'
+
+        dataframe['Score'] = np.array(outputs, dtype=np.float32)
+        output_filename = f'{os.path.splitext(os.path.basename(input_file))[0]}_predicted.parquet'
         output_path = os.path.join(output_dir, output_filename)
-        
-        dataframe['Score'] = outputs
-        dataframe.to_csv(output_path, index=False)
+
+        dataframe.to_parquet(output_path, compression='gzip', index=False)
         
         print(f"File processed, results saved to: {output_path}")
         
     except Exception as e:
-        print(f"Error processing file {file_name}: {str(e)}")
-
+        print(f"Error processing file {os.path.basename(input_file)}: {str(e)}")
 
 
 def main():
