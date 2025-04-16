@@ -85,10 +85,10 @@ def pca_code_pool(seqs: list, row=30, n_features=16):
 def load_data(CDR3, Epitope, col=20, row=9, m=1): 
     number=len(CDR3)
     x_feature = np.ndarray(shape=(number, row, col + 1, 2)) 
-    x_feature[:, :, :, 0] = pca_code(CDR3, row=row, n_features=col)
-    x_feature[:, :, :, 1] = pca_code(Epitope, row=row, n_features=col)  
-    #epit_encoding = pca_code([Epitope[0]], row, col)[0]
-    #x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
+    x_feature[:, :, :, 0] = pca_code_pool(CDR3, row=row, n_features=col)
+    #x_feature[:, :, :, 1] = pca_code(Epitope, row=row, n_features=col)  
+    epit_encoding = pca_code([Epitope[0]], row, col)[0]
+    x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
     return x_feature
 
 def AA_ONE_HOT(AA):
