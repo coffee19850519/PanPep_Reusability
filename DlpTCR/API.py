@@ -14,14 +14,16 @@ parser.add_argument('--sample_size', type=int, default=1000,
                     help='Number of samples to process in each chunk')
 parser.add_argument('--batch_size', type=int, default=1000,
                     help='Number of samples to process in each batch')
+parser.add_argument('--model', type=str, default='B',
+                    help='model_select,A,B or AB')
 args = parser.parse_args()
 start = time.time()
 input_file_path = args.input_file
 job_dir_name = os.path.basename(input_file_path)[:-4]
 sample_size = args.sample_size
 batch_size = args.batch_size
-model_select = "B"  
-user_dir = './newdata/zero/' + str(job_dir_name) + '/'
+model_select = args.model
+user_dir = './newdata/' + str(job_dir_name) + '/'
 
 user_dir_Exists = os.path.exists(user_dir)
 if not user_dir_Exists: 
@@ -45,23 +47,12 @@ def process_chunk(chunk_idx, batch_data, temp_dir, model_select, batch_size):
     print(f"Input batch_data shape: {batch_data.shape}")
     try:
         result = deal_file(batch_data, model_select)
-
-
-        if not isinstance(result, tuple) or len(result) not in [4, 5]:
-            print(f"Invalid result format in chunk {chunk_idx+1}", "ERROR")
-            return None
-            
-        if len(result) == 4:
-            error_info, TCRA_cdr3, TCRB_cdr3, Epitope = result
-            TCRB_pca_features = None
-        else:
-            error_info, TCRA_cdr3, TCRB_cdr3, Epitope, TCRB_pca_features = result
-            
+        error_info,TCRA_cdr3,TCRB_cdr3,Epitope,TCRA_pca_features,TCRB_pca_features = result
         print(f"Feature extraction completed for chunk {chunk_idx + 1}")
         batch_output = save_outputfile(
             batch_dir, model_select, batch_data,
-            TCRA_cdr3, TCRB_cdr3, Epitope, 
-            TCRB_pca_features, batch_size
+            TCRA_cdr3, TCRB_cdr3, Epitope, TCRA_pca_features,
+            TCRB_pca_features, batch_size,gpu_id='0'
         )
         if batch_output and os.path.exists(batch_output):
             print(f"Reading results from: {batch_output}")
@@ -72,6 +63,50 @@ def process_chunk(chunk_idx, batch_data, temp_dir, model_select, batch_size):
         return None
     
     return None
+def save_final_predictions(sorted_predictions, user_dir, model_select):
+    if sorted_predictions:
+        final_predictions = pd.concat(sorted_predictions, ignore_index=True)
+
+        if model_select == 'AB':
+            columns = ['TCRA_CDR3', 'TCRB_CDR3', 'Epitope', 'Predict', 
+                       'Probability (TCRA_Epitope)', 'Probability (TCRB_Epitope)']
+        elif model_select == 'B':
+            columns = ['TCRB_CDR3', 'Epitope', 'Predict', 
+                       'Probability (predicted as a positive sample)']
+        else:
+            columns = ['TCRA_CDR3', 'Epitope', 'Predict', 
+                       'Probability (predicted as a positive sample)']
+
+        missing_columns = [col for col in columns if col not in final_predictions.columns]
+        if missing_columns:
+            print(f"Missing columns: {missing_columns}", "WARNING")
+            return
+
+        final_predictions = final_predictions[columns]
+
+        final_output_path = os.path.join(user_dir, 'final_predictions.parquet')
+
+        if 'TCRB_CDR3' in final_predictions.columns:
+            final_predictions['TCRB_CDR3'] = final_predictions['TCRB_CDR3'].astype(str)
+        if 'TCRA_CDR3' in final_predictions.columns:
+            final_predictions['TCRA_CDR3'] = final_predictions['TCRA_CDR3'].astype(str)
+        final_predictions['Epitope'] = final_predictions['Epitope'].astype(str)
+        final_predictions['Predict'] = final_predictions['Predict'].astype(str)
+
+        if model_select == 'AB':
+            final_predictions['Probability (TCRA_Epitope)'] = final_predictions[
+                'Probability (TCRA_Epitope)'].astype(np.float32)
+            final_predictions['Probability (TCRB_Epitope)'] = final_predictions[
+                'Probability (TCRB_Epitope)'].astype(np.float32)
+        else:
+            final_predictions['Probability (predicted as a positive sample)'] = final_predictions[
+                'Probability (predicted as a positive sample)'].astype(np.float32)
+
+        final_predictions.to_parquet(final_output_path, engine='pyarrow', index=False, compression='gzip')
+        print(f"Final results saved to: {final_output_path}")
+    else:
+        print("No valid predictions were generated", "WARNING")
+
 
 def main():
     start = time.time()
@@ -84,8 +119,8 @@ def main():
 
     try:
         df = pd.read_csv(input_file_path,
-                         converters={'TCRB_CDR3': validate_sequence, 'Epitope': validate_sequence})
-        full_input_file = df.dropna(subset=['TCRB_CDR3', 'Epitope'])
+                         converters={'TCRA_CDR3': validate_sequence,'Epitope': validate_sequence})
+        full_input_file = df.dropna(subset=['TCRA_CDR3','Epitope'])
         del df
 
         total_samples = len(full_input_file)
@@ -108,21 +143,7 @@ def main():
             del batch_data
             if result is not None:
                 del result
-
-        if sorted_predictions:
-            final_predictions = pd.concat(sorted_predictions, ignore_index=True)
-            final_output_path = os.path.join(user_dir, 'final_predictions.parquet')
-
-            final_predictions['TCRB_CDR3'] = final_predictions['TCRB_CDR3'].astype(str)
-            final_predictions['Epitope'] = final_predictions['Epitope'].astype(str)
-            final_predictions['Predict'] = final_predictions['Predict'].astype(str)
-            final_predictions['Probability (predicted as a positive sample)'] = final_predictions[
-                'Probability (predicted as a positive sample)'].astype(np.float32)
-
-            final_predictions.to_parquet(final_output_path, engine='pyarrow', index=False, compression= 'gzip')
-            print(f"Final results saved to: {final_output_path}")
-        else:
-            print("No valid predictions were generated", "WARNING")
+        save_final_predictions(sorted_predictions, user_dir, model_select)
             
     except Exception as e:
         print(f"Fatal error: {str(e)}", "ERROR")

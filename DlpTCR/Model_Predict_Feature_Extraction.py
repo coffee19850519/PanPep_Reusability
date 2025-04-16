@@ -36,41 +36,40 @@ def pca_code(seqs: list, row=30, n_features=16):
         x.append(t)
     return np.array(x)
 
-def init_worker(n_features,row):
-    global global_aadict, global_row, global_col
-    global_aadict = aaindex1PCAValues(n_features)
-    global_row = row
-    global_col = n_features + 1
 
-def process_seq(seq):
+def process_seq(seq, aadict, row, col):
     n = len(seq)
-    t = np.zeros((global_row, global_col))
+    t = np.zeros((row, col))
     j = 0
-    while j < n and j < global_row:
-        t[j, :-1] = global_aadict[seq[j]]
+    while j < n and j < row:
+        t[j, :-1] = aadict[seq[j]]
         t[j, -1] = 0
         j += 1
-    while j < global_row:
+    while j < row:
         t[j, -1] = 1
         j += 1
     return t
 
 def pca_code_pool(seqs: list, row=30, n_features=16):
+    
     col = n_features + 1
-    with Pool(initializer=init_worker, initargs=(n_features, row)) as pool:
-        results = pool.map(process_seq, seqs)
+    aadict = aaindex1PCAValues(n_features)
+
+    with Pool() as pool:
+        results = pool.starmap(process_seq, [(seq, aadict, row, col) for seq in seqs])
+    
     return np.array(results)
 
-def read_seqs(cdr3, epitope, model=1):
-    cdr3_seqs, epit_seqs = [], []
-    for i in range(len(epitope)):
-        if model == 1:
-            cdr3_seqs.append(cdr3[i][2:-1])
-        elif model == 2:
-            cdr3_seqs.append(cdr3[i])
-        epit_seqs.append(epitope[i])
+# def read_seqs(cdr3, epitope, model=1):
+#     cdr3_seqs, epit_seqs = [], []
+#     for i in range(len(epitope)):
+#         if model == 1:
+#             cdr3_seqs.append(cdr3[i][2:-1])
+#         elif model == 2:
+#             cdr3_seqs.append(cdr3[i])
+#         epit_seqs.append(epitope[i])
 
-    return cdr3_seqs, epit_seqs
+#     return cdr3_seqs, epit_seqs
 
 
 # def load_data(CDR3, Epitope, col=20, row=9, m=1): 
@@ -84,12 +83,12 @@ def read_seqs(cdr3, epitope, model=1):
 #     return x_feature
 
 def load_data(CDR3, Epitope, col=20, row=9, m=1): 
-    new_cdr3_seqs, new_epit_seqs = read_seqs(CDR3, Epitope, m)
-    number=len(new_cdr3_seqs)
+    number=len(CDR3)
     x_feature = np.ndarray(shape=(number, row, col + 1, 2)) 
-    x_feature[:, :, :, 0] = pca_code_pool(new_cdr3_seqs, row=row, n_features=col) 
-    epit_encoding = pca_code([new_epit_seqs[0]], row, col)[0]
-    x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
+    x_feature[:, :, :, 0] = pca_code(CDR3, row=row, n_features=col)
+    x_feature[:, :, :, 1] = pca_code(Epitope, row=row, n_features=col)  
+    #epit_encoding = pca_code([Epitope[0]], row, col)[0]
+    #x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
     return x_feature
 
 def AA_ONE_HOT(AA):
@@ -178,6 +177,26 @@ def AA_CHEM(AA):
     return coding_arr
 
 
+# def seq2feature(cdr3, epitope):
+#     feature_array = np.zeros((len(cdr3), 58, 20))
+    
+#     for i, (seq_cdr, seq_epi) in enumerate(zip(cdr3, epitope)):
+#         seq_combined = (seq_cdr + seq_epi).upper()
+#         if len(seq_combined) > 29:
+#             seq_fixed = seq_combined[:29]
+#         elif len(seq_combined) < 29:
+#             seq_fixed = 'X' * (29 - len(seq_combined)) + seq_combined
+#         else:
+#             seq_fixed = seq_combined
+#         aa_onehot = AA_ONE_HOT(seq_fixed)
+#         aa_chem = AA_CHEM(seq_fixed)
+
+#         cdr3_epitope = np.concatenate((aa_onehot, aa_chem), axis=0)
+        
+#         feature_array[i] = cdr3_epitope
+#     print(feature_array.shape)
+#     return feature_array
+
 def seq2feature(cdr3, epitope):
     feature_array = np.zeros([len(cdr3), 58, 20])
 
@@ -240,20 +259,28 @@ def deal_file(excel_file_path,user_select):
     if user_select == 'A':
     
         if TCRA_cdr3_num == Epitope_num :
-
-            #print('3.1')
+            TCRA_pca_features = {}
+            #print('5.1')
+            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
+            TCRA_pca_features[1] = seq2feature(full_TCRA_cdr3, full_Epitope)
+            #print('5.2')
+            TCRA_Col = 15  
+            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            TCRA_pca_features[2]=load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            #print('5.3')
+            # #print('3.1')
             
            
 
-            TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
-            #print('3.2')
-            TCRA_Col = 15  
-            TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            #print('3.3')
+            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
+            # #print('3.2')
+            # TCRA_Col = 15   
+            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            # #print('3.3')
         else:
             
             error_info = 1
-        
+        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope, TCRA_pca_features,None
 
     elif user_select == 'B':
 
@@ -267,32 +294,32 @@ def deal_file(excel_file_path,user_select):
         else:
             
             error_info = 2        
-            
+        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope, None,TCRB_pca_features
 
     elif user_select == 'AB':
 
         if TCRA_cdr3_num == TCRB_cdr3_num == Epitope_num :
-
+            TCRA_pca_features = {}
             #print('5.1')
-            TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
-
+            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
+            TCRA_pca_features[1] = seq2feature(full_TCRA_cdr3, full_Epitope)
             #print('5.2')
             TCRA_Col = 15  
-            TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            TCRA_pca_features[2]=load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
             #print('5.3')
-
-            TCRB_Col = [10, 18, 20]
-            for i in TCRB_Col:
-                #print(i)
-                TCRB_pca_feature = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
-
-
-
+            TCRB_pca_features = {}
+            if TCRB_cdr3_num == Epitope_num:
+                TCRB_Col = [10, 18, 20]
+                for i in TCRB_Col:
+                    TCRB_pca_features[i] = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
+            
         else:
             #print('6')
 
             
             error_info = 3
+        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope,TCRA_pca_features,TCRB_pca_features
 
 
-    return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope,TCRB_pca_features
+    return error_info, None, None, None, None, None
