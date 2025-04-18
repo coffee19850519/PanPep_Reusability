@@ -281,10 +281,8 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
                 n_TCRA_Y_pred_ALL[k] = 'False TCR-pMHC'
                 n_TCRA_Y_acc_ALL[k] = 1 - TCRA_Y_pred_ALL_avg[k,0]                
 
-        #字典中的key值即为csv中列名
         dataframe = pd.DataFrame({'TCRA_CDR3':TCRA_cdr3,'Epitope':Epitope,'Predict':n_TCRA_Y_pred_ALL,'Probability (predicted as a positive sample)':n_TCRA_Y_acc_ALL})
 
-        #将DataFrame存储为csv,index表示是否显示行名，default=True
         print('2')
         csv_file = 'TCRA_pred.csv'
         csv_path = os.path.join(user_dir, csv_file)
@@ -347,11 +345,8 @@ def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epi
                 n_TCRB_Y_acc_ALL[k] = 1 - TCRAB_Y_acc_ALL[1][k] 
                 
         print('2')
-        #字典中的key值即为csv中列名
         dataframe = pd.DataFrame({'TCRA_CDR3':TCRA_cdr3,'TCRB_CDR3':TCRB_cdr3,'Epitope':Epitope,'Predict':n_TCRAB_Y_pred_ALL,
                                 'Probability (TCRA_Epitope)':n_TCRA_Y_acc_ALL,'Probability (TCRB_Epitope)':n_TCRB_Y_acc_ALL})
-        
-        #将DataFrame存储为csv,index表示是否显示行名，default=True
         
         csv_file = 'TCRAB_pred.csv'
         csv_path = os.path.join(user_dir, csv_file)
