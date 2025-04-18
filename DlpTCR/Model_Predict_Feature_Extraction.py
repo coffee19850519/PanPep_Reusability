@@ -1,3 +1,16 @@
+"""
+Feature Extraction Module for TCR-Epitope Binding Prediction Model
+
+This module provides functionality for extracting features from TCR (T-cell receptor) sequences 
+and epitope sequences for use in binding prediction models. It supports both TCRA and TCRB chains.
+
+Key features:
+- PCA-based amino acid encoding
+- One-hot encoding for amino acids
+- Chemical property-based encoding
+- Support for both single chain (A or B) and dual chain (AB) analysis
+"""
+
 import pandas as pd 
 import os
 import numpy as np
@@ -8,9 +21,19 @@ from sklearn.decomposition import PCA
 from multiprocessing import Pool, cpu_count
 from functools import partial
 
+# Define valid amino acids
 AminoAcids = 'ARNDCQEGHILKMFPSTWYV'
 
 def aaindex1PCAValues(n_features=15):
+    """
+    Load pre-computed PCA values for amino acid encoding.
+    
+    Args:
+        n_features (int): Number of PCA features to use
+        
+    Returns:
+        dict: Dictionary mapping amino acids to their PCA values
+    """
     file = './pca/Amino_Acids_PCAVal{}_dict.txt'.format(n_features)
     with open(file, 'r') as fr:
         aadic = eval(fr.read())
@@ -18,6 +41,17 @@ def aaindex1PCAValues(n_features=15):
 
 
 def pca_code(seqs: list, row=30, n_features=16):
+    """
+    Encode sequences using PCA values.
+    
+    Args:
+        seqs (list): List of amino acid sequences
+        row (int): Maximum sequence length to consider
+        n_features (int): Number of PCA features
+        
+    Returns:
+        np.array: Encoded sequences
+    """
     aadict = aaindex1PCAValues(n_features)
     x = []
     col = n_features + 1
@@ -38,24 +72,73 @@ def pca_code(seqs: list, row=30, n_features=16):
 
 
 def process_seq(seq, aadict, row, col):
+    """
+    Helper function for parallel sequence processing in pca_code_pool.
+    Processes a single sequence by converting it to PCA-based encoding.
+    
+    This function is designed to be called in parallel by pca_code_pool using multiprocessing.
+    It performs the same encoding as pca_code but for a single sequence, making it suitable
+    for parallel processing.
+    
+    Args:
+        seq (str): Single amino acid sequence to encode
+        aadict (dict): Dictionary mapping amino acids to their PCA values
+        row (int): Maximum sequence length (sequences will be padded if shorter)
+        col (int): Number of features + 1 (includes padding indicator)
+        
+    Returns:
+        np.array: 2D array of shape (row, col) containing:
+            - PCA values for each amino acid in positions [:, :-1]
+            - Padding indicators (0=amino acid, 1=padding) in position [:, -1]
+    """
     n = len(seq)
     t = np.zeros((row, col))
     j = 0
+    # Fill with PCA values for actual sequence
     while j < n and j < row:
         t[j, :-1] = aadict[seq[j]]
-        t[j, -1] = 0
+        t[j, -1] = 0  # Not padding
         j += 1
+    # Fill remaining positions with padding
     while j < row:
-        t[j, -1] = 1
+        t[j, -1] = 1  # Padding indicator
         j += 1
     return t
-
+# Linux uses this multi-process code, and Windows uses the pca_code function above, because Windows does not support this multi-process pattern #
 def pca_code_pool(seqs: list, row=30, n_features=16):
+    """
+    Parallel version of pca_code that uses multiprocessing for faster sequence encoding.
     
+    This function distributes the sequence encoding work across multiple CPU cores using
+    Python's multiprocessing Pool. Each sequence is processed independently by process_seq,
+    making this function much faster than pca_code for large datasets.
+    
+    The encoding process:
+    1. Loads PCA values for amino acids
+    2. Creates a process pool
+    3. Maps sequences to process_seq function for parallel processing
+    4. Combines results into a single numpy array
+    
+    Args:
+        seqs (list): List of amino acid sequences to encode
+        row (int, optional): Maximum sequence length. Defaults to 30.
+        n_features (int, optional): Number of PCA features to use. Defaults to 16.
+        
+    Returns:
+        np.array: 3D array of shape (len(seqs), row, n_features+1) containing:
+            - PCA values for each sequence
+            - Padding indicators in the last column
+            
+    Note:
+        This function automatically uses all available CPU cores for parallel processing.
+        For small datasets, the overhead of parallel processing might make it slower than
+        the sequential pca_code function.
+    """
     col = n_features + 1
     aadict = aaindex1PCAValues(n_features)
 
     with Pool() as pool:
+        # Distribute work across CPU cores
         results = pool.starmap(process_seq, [(seq, aadict, row, col) for seq in seqs])
     
     return np.array(results)
@@ -83,10 +166,27 @@ def pca_code_pool(seqs: list, row=30, n_features=16):
 #     return x_feature
 
 def load_data(CDR3, Epitope, col=20, row=9, m=1): 
-    number=len(CDR3)
+    """
+    Load and encode both CDR3 and Epitope sequences using PCA-based encoding.
+    This function creates a 4D feature array where:
+    - First dimension: number of sequence pairs
+    - Second dimension: sequence length (padded/truncated to row)
+    - Third dimension: PCA features + padding indicator
+    - Fourth dimension: CDR3 (0) vs Epitope (1) features
+    
+    Args:
+        CDR3 (list): List of CDR3 sequences to encode
+        Epitope (list): List of Epitope sequences to encode
+        col (int, optional): Number of PCA features to use. Defaults to 20.
+        row (int, optional): Maximum sequence length to consider. Defaults to 9.
+        m (int, optional): Model version. Defaults to 1.
+        
+    Returns:
+        np.ndarray: 4D array of shape (n_sequences, row, col+1, 2) containing encoded features
+    """
+    number = len(CDR3)
     x_feature = np.ndarray(shape=(number, row, col + 1, 2)) 
     x_feature[:, :, :, 0] = pca_code_pool(CDR3, row=row, n_features=col)
-    #x_feature[:, :, :, 1] = pca_code(Epitope, row=row, n_features=col)  
     epit_encoding = pca_code([Epitope[0]], row, col)[0]
     x_feature[:, :, :, 1] = np.repeat(epit_encoding[np.newaxis, :, :], number, axis=0) 
     return x_feature
@@ -177,149 +277,143 @@ def AA_CHEM(AA):
     return coding_arr
 
 
-# def seq2feature(cdr3, epitope):
-#     feature_array = np.zeros((len(cdr3), 58, 20))
-    
-#     for i, (seq_cdr, seq_epi) in enumerate(zip(cdr3, epitope)):
-#         seq_combined = (seq_cdr + seq_epi).upper()
-#         if len(seq_combined) > 29:
-#             seq_fixed = seq_combined[:29]
-#         elif len(seq_combined) < 29:
-#             seq_fixed = 'X' * (29 - len(seq_combined)) + seq_combined
-#         else:
-#             seq_fixed = seq_combined
-#         aa_onehot = AA_ONE_HOT(seq_fixed)
-#         aa_chem = AA_CHEM(seq_fixed)
-
-#         cdr3_epitope = np.concatenate((aa_onehot, aa_chem), axis=0)
-        
-#         feature_array[i] = cdr3_epitope
-#     print(feature_array.shape)
-#     return feature_array
-
 def seq2feature(cdr3, epitope):
+    """
+    Convert CDR3 and epitope sequences to a combined feature representation using 
+    both one-hot encoding and chemical properties.
+    
+    The function performs the following steps:
+    1. Combines CDR3 and epitope sequences
+    2. Pads or truncates combined sequence to length 29
+    3. Generates one-hot encoding for amino acids
+    4. Generates chemical property encoding
+    5. Combines both encodings into a single feature array
+    
+    Args:
+        cdr3 (list): List of CDR3 sequences
+        epitope (list): List of epitope sequences
+        
+    Returns:
+        np.ndarray: Feature array of shape (n_sequences, 58, 20) where:
+            - 58 = 29 (sequence length) * 2 (one-hot + chemical)
+            - 20 = number of features per position
+    
+    Note:
+        - Sequences shorter than 29 are padded with 'X'
+        - Sequences longer than 29 are truncated
+        - 'X' is encoded as all zeros in both encodings
+    """
     feature_array = np.zeros([len(cdr3), 58, 20])
 
     for i in range(len(cdr3)):
+        # Convert sequences to uppercase
         cdr3_1 = cdr3[i].upper() 
         epitope_1 = epitope[i].upper() 
+        
+        # Combine CDR3 and epitope sequences
         cdr3_epitope_splice = cdr3_1 + epitope_1
-        # print(cdr3_epitope_splice)
         new_cdr3_epitope_splice = cdr3_epitope_splice
+        
+        # Pad or truncate sequence to length 29
         if len(cdr3_epitope_splice) != 29:
             if len(cdr3_epitope_splice) > 29:
                 new_cdr3_epitope_splice = cdr3_epitope_splice[:29]
             else:
                 new_cdr3_epitope_splice = 'X' * (29 - len(cdr3_epitope_splice)) + cdr3_epitope_splice
 
+        # Generate both encoding types
         aa_onehot = AA_ONE_HOT(new_cdr3_epitope_splice)
-        aa_chen = AA_CHEM(new_cdr3_epitope_splice)
+        aa_chem = AA_CHEM(new_cdr3_epitope_splice)
 
-        data = np.append(aa_onehot, aa_chen)  
-        # print(data)
+        # Combine encodings
+        data = np.append(aa_onehot, aa_chem)  
         dima = aa_onehot.shape  
-        dimn = aa_chen.shape  
+        dimn = aa_chem.shape  
         cdr3_epitope = data.reshape(dima[0] + dimn[0], dima[1]) 
 
         feature_array[i] = cdr3_epitope
     return feature_array
 
 
-def deal_file(excel_file_path,user_select):
+def deal_file(excel_file_path, user_select):
+    """
+    Process input file and extract features based on user selection.
+    
+    Args:
+        excel_file_path: Path to input Excel file containing sequences
+        user_select (str): Analysis type ('A' for TCRA, 'B' for TCRB, 'AB' for both)
+        
+    Returns:
+        tuple: (error_info, TCRA_sequences, TCRB_sequences, Epitope_sequences, 
+               TCRA_features, TCRB_features)
+        
+        error_info codes:
+        0: Success
+        1: TCRA sequence count mismatch
+        2: TCRB sequence count mismatch
+        3: Sequence count mismatch in AB analysis
+    """
     error_info = 0
-
-
     input_count = excel_file_path.count()
     
+    # Get sequence counts from input file
     index_num = input_count[1]
     TCRA_cdr3_num = input_count[0]
     TCRB_cdr3_num = input_count[1]
     Epitope_num = input_count[2]
     
-    
+    # Extract sequences from input file
     TCRA_cdr3 = excel_file_path.TCRA_CDR3
-
     TCRB_cdr3 = excel_file_path.TCRB_CDR3
-
     Epitope = excel_file_path.Epitope
 
     full_TCRA_cdr3 = TCRA_cdr3[0:(TCRA_cdr3_num-0)]
-
     full_TCRB_cdr3 = TCRB_cdr3[0:(TCRB_cdr3_num-0)]
-
     full_Epitope = Epitope[0:(Epitope_num-0)]
     
-    M = 2
-    Row = 20
-    #print(2)
+    M = 2  # Model version
+    Row = 20  # Maximum sequence length
 
-
-    
-
+    # Process TCRA analysis
     if user_select == 'A':
-    
-        if TCRA_cdr3_num == Epitope_num :
+        if TCRA_cdr3_num == Epitope_num:
             TCRA_pca_features = {}
-            #print('5.1')
-            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
+            # Generate one-hot and chemical property features
             TCRA_pca_features[1] = seq2feature(full_TCRA_cdr3, full_Epitope)
-            #print('5.2')
+            # Generate PCA features
             TCRA_Col = 15  
-            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            TCRA_pca_features[2]=load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            #print('5.3')
-            # #print('3.1')
-            
-           
-
-            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
-            # #print('3.2')
-            # TCRA_Col = 15   
-            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            # #print('3.3')
+            TCRA_pca_features[2] = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
         else:
-            
             error_info = 1
-        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope, TCRA_pca_features,None
+        return error_info, full_TCRA_cdr3, full_TCRB_cdr3, full_Epitope, TCRA_pca_features, None
 
+    # Process TCRB analysis
     elif user_select == 'B':
-
-        #print('4')
         TCRB_pca_features = {}
         if TCRB_cdr3_num == Epitope_num:
             TCRB_Col = [10, 18, 20]
             for i in TCRB_Col:
                 TCRB_pca_features[i] = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
-            
         else:
-            
             error_info = 2        
-        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope, None,TCRB_pca_features
+        return error_info, full_TCRA_cdr3, full_TCRB_cdr3, full_Epitope, None, TCRB_pca_features
 
+    # Process combined TCRA/TCRB analysis
     elif user_select == 'AB':
-
-        if TCRA_cdr3_num == TCRB_cdr3_num == Epitope_num :
+        if TCRA_cdr3_num == TCRB_cdr3_num == Epitope_num:
+            # Process TCRA features
             TCRA_pca_features = {}
-            #print('5.1')
-            # TCRA_onehot_feature_array = seq2feature(full_TCRA_cdr3, full_Epitope)
             TCRA_pca_features[1] = seq2feature(full_TCRA_cdr3, full_Epitope)
-            #print('5.2')
             TCRA_Col = 15  
-            # TCRA_pca_feature = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            TCRA_pca_features[2]=load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
-            #print('5.3')
+            TCRA_pca_features[2] = load_data(full_TCRA_cdr3, full_Epitope, TCRA_Col, Row, M)
+            
+            # Process TCRB features
             TCRB_pca_features = {}
-            if TCRB_cdr3_num == Epitope_num:
-                TCRB_Col = [10, 18, 20]
-                for i in TCRB_Col:
-                    TCRB_pca_features[i] = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
-            
+            TCRB_Col = [10, 18, 20]
+            for i in TCRB_Col:
+                TCRB_pca_features[i] = load_data(full_TCRB_cdr3, full_Epitope, i, Row, M)
         else:
-            #print('6')
-
-            
             error_info = 3
-        return error_info,full_TCRA_cdr3,full_TCRB_cdr3,full_Epitope,TCRA_pca_features,TCRB_pca_features
-
+        return error_info, full_TCRA_cdr3, full_TCRB_cdr3, full_Epitope, TCRA_pca_features, TCRB_pca_features
 
     return error_info, None, None, None, None, None

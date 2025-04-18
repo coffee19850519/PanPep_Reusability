@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # 1、导入库
+# # 1. Import Libraries
 
 
 
@@ -40,8 +40,8 @@ import matplotlib.pyplot as plt
 import csv
 import pandas as pd
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # 只显示error和warining信息 3 只显示error信息
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 这一行注释掉就是使用cpu，不注释就是使用gpu
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Only show error and warning messages; 3 for error only
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Comment out to use CPU, uncomment to use GPU
 physical_devices = tf.config.experimental.list_physical_devices('GPU')
 if physical_devices:
     try:
@@ -52,10 +52,13 @@ if physical_devices:
 
     except Exception as e:
         print("Error setting GPU:", e)
-# # 2、TCRA预测函数
+# # 2. TCRA Prediction Function
 
 
 def TCRA_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,batch_size, gpu_id):
+    """
+    Integrates predictions from three models (FULL, CNN, RESNET) for TCRA sequences
+    """
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
     K.clear_session()
     tf.reset_default_graph()
@@ -106,9 +109,12 @@ def TCRA_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
     return Y_pred_ALL,Y_pred_ALL_avg
 
 
-# # 3、TCRB预测函数
+# # 3. TCRB Prediction Function
 
 def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET_Feature,batch_size, gpu_id):
+    """
+    Integrates predictions from three models (FULL, CNN, RESNET) for TCRB sequences
+    """
     os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
     K.clear_session()
     tf.reset_default_graph()   
@@ -165,9 +171,12 @@ def TCRB_Model_Integration(FULL_M,CNN_M,RESNET_M,FULL_Feature,CNN_Feature,RESNET
     
 
 
-# # 4、TCA结果预测(预测为0表示该CDR3与其Epitope结合)
+# # 4. TCRA Result Prediction (0 indicates binding between CDR3 and Epitope)
 
 def pred_A(user_dir,TCRA_pca_features,n,gpu_id):
+    """
+    Predicts TCRA binding results using integrated model approach
+    """
     TCRA_FULL_M = './model/FULL_A_ALL_onehot.h5'
     TCRA_CNN_M = './model/CNN_A_ALL_onehot.h5'
     TCRA_RESNET_M = './model/RESNET_A_ALL_pca15.h5'
@@ -187,9 +196,12 @@ def pred_A(user_dir,TCRA_pca_features,n,gpu_id):
     return TCRA_Y_pred_ALL,TCRA_Y_pred_ALL_avg
 
 
-# # 5、TCRB结果预测(预测为0表示该TCRB与其Epitope结合)
+# # 5. TCRB Result Prediction (0 indicates binding between TCRB and Epitope)
 
 def pred_B(user_dir,TCRB_pca_features,n, gpu_id):
+    """
+    Predicts TCRB binding results using integrated model approach
+    """
     TCRB_FULL_M = './model/FULL_B_ALL_pca18.h5'
     TCRB_CNN_M = './model/CNN_B_ALL_pca20.h5'
     TCRB_RESNET_M = './model/RESNET_B_ALL_pca10.h5'
@@ -207,9 +219,12 @@ def pred_B(user_dir,TCRB_pca_features,n, gpu_id):
     return TCRB_Y_pred_ALL,TCRB_Y_pred_ALL_avg
 
 
-# # 6、结果整合，只有TCRA和TCRB同时与其Epitope结合才判定为正样本
+# # 6. Result Integration (positive sample only when both TCRA and TCRB bind to Epitope)
 
 def pred_inte_all(user_dir,user_select,TCRA_pca_features,TCRB_pca_features,n, gpu_id):
+    """
+    Integrates predictions for both TCRA and TCRB sequences
+    """
     
     
     if user_select == 'A':
@@ -238,6 +253,14 @@ def pred_inte_all(user_dir,user_select,TCRA_pca_features,TCRB_pca_features,n, gp
 
 
 def save_outputfile(user_dir,user_select,excel_file_path,TCRA_cdr3,TCRB_cdr3,Epitope,TCRA_pca_features,TCRB_pca_features,n, gpu_id):
+    """
+    Saves prediction results to CSV files based on user selection (TCRA, TCRB, or both)
+    Output columns:
+    - CDR3 sequences
+    - Epitope
+    - Prediction result (True/False TCR-pMHC)
+    - Binding probability
+    """
     if user_select == 'A':
         print(user_select)
 
