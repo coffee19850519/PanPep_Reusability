@@ -1,6 +1,6 @@
 # Reusability Report: Meta-Learning for Antigen-Specific T-Cell Receptor Binder Identification 
 
-This epository contains the code associated with our reusability study upon the research "Pan-Peptide Meta Learning for T-Cell Receptor-Antigen Binding Recognition", *Nature Machine Intelligence*.
+This epository contains the code associated with our reusability study upon the research "Pan-Peptide Meta Learning for T-Cell Receptor-Antigen Binding Recognition"
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/username/repo/blob/main/LICENSE)
 
@@ -20,11 +20,11 @@ The training pipeline is located in `./train/` with the main entry point at `./t
 ## CASE 1: Inference Reproducibility with Original Dataset
 
 ### Data Requirements
-- **Test Data**: Available on [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset?csf=1&web=1&e=4j7a9A)
-- **Pre-trained Checkpoints**: Download from the [original PanPep repository](https://github.com/bm2-lab/PanPep/tree/main/Requirements)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Eoxmw-A2SktDnWKYFDg42TkBmrZP7wOBg1g95kY3nQYPYg?e=vKrGpt)
+- **Pre-trained Checkpoints**: Download from the [PanPep's repository](https://github.com/bm2-lab/PanPep/blob/main/Requirements/model.pt)
 - **Encoding Files**: Background database and `.npz` encoding files available at:
-  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/tcr_b.npz?csf=1&web=1&e=tDNecP)
-  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/peptide_b.npz?csf=1&web=1&e=HdfZ1c)
+  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=IUYxGG)
+  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=rd0CF9)
 
 ### Inference Modes
 
@@ -103,11 +103,11 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 
 ### Data Requirements
 
-- **Test Data**: Available on [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/independent_dataset?csf=1&web=1&e=m89fxz)
-- **Pre-trained Checkpoints**: Download from the [original PanPep repository](https://github.com/bm2-lab/PanPep/tree/main/Requirements)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Em3lIjtz-fxOnnz64yzprsoBNVrEvjkbzrBlK4Pa6-FWwg?e=moZ7cg)
+- **Pre-trained Checkpoints**: Download from the [original PanPep repository](https://github.com/bm2-lab/PanPep/tree/main/Requirements/model.pt)
 - **Encoding Files**: Background database and `.npz` encoding files available at:
-  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/tcr_b.npz?csf=1&web=1&e=tDNecP)
-  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/peptide_b.npz?csf=1&web=1&e=HdfZ1c)
+  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=0QEsas)
+  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=OIM7Jc)
 
 ### Usage
 Use the same inference modes and metrics calculation pipeline as described in [CASE 1](#case-1-inference-reproducibility-with-original-dataset).
@@ -115,11 +115,11 @@ Use the same inference modes and metrics calculation pipeline as described in [C
 
 ### Data Requirements
 
-- **Test Data**: Available on [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/independent_dataset?csf=1&web=1&e=m89fxz)
-- **Pre-trained Checkpoints**: Download from [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/beta?csf=1&web=1&e=FleJEw)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Em3lIjtz-fxOnnz64yzprsoBNVrEvjkbzrBlK4Pa6-FWwg?e=KVoaZd)
+- **Pre-trained Checkpoints**: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EsHEqqK-ECBAqQo1_f97IVcBaL1WoQ2euN9Xm497npseOA?e=UYWyXZ)
 - **Encoding Files**: Background database and `.npz` encoding files available at:
-  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/tcr_b.npz?csf=1&web=1&e=tDNecP)
-  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/beta/peptide_b.npz?csf=1&web=1&e=HdfZ1c)
+  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=84cga4)
+  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=CgX01O)
 
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use `get_sample_indices_1.py` instead of `get_sample_indices_100.py` for sample extraction.
@@ -127,11 +127,11 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Data Requirements
 
-- **Test Data**: Available on [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/independent_dataset(alpha)?csf=1&web=1&e=PnFeq4)
-- **Pre-trained Checkpoints**: Download from [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/alpha?csf=1&web=1&e=0e0X5o)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
+- **Pre-trained Checkpoints**: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=Iuojsc)
 - **Encoding Files**: Background database and `.npz` encoding files available at:
-  - [tcr_a.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/alpha/tcr_a.npz?csf=1&web=1&e=Yh0F9c)
-  - [peptide_a.npz](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/npz/alpha/peptide_a.npz?csf=1&web=1&e=baZETL)
+  - [tcr_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EfbaOgcR0TVCjZMWigUshYABOa0cqxpJDZaiZBWsm0wMuw?e=9YHM4s)
+  - [peptide_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EW2_VBo_t7RAs-ysGbkZMacBX_PTniASmuROxwpVjmt_pw?e=dASilC)
 
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use `get_sample_indices_1.py` instead of `get_sample_indices_100.py` for sample extraction.
@@ -139,10 +139,10 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Data Requirements
 
-- **Test Data**: Available on [OneDrive](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/independent_dataset(alphabeta)?csf=1&web=1&e=krBsMg)
-- **Pre-trained Checkpoints**: Download from OneDrive:
-  - [Alpha chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/alpha?csf=1&web=1&e=0e0X5o)
-  - [Beta chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/beta?csf=1&web=1&e=FleJEw)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ei2Ef8zmUGBKqh8H0Vhrl9QBOGfwUjV7Oead3UVlV7kVKw?e=NC6JMl)
+- **Pre-trained Checkpoints**: Download from here:
+  - [Alpha chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=oXLckH)
+  - [Beta chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EsHEqqK-ECBAqQo1_f97IVcBaL1WoQ2euN9Xm497npseOA?e=86CUNb)
 - **Encoding Files**: Local encoding files located at:
   - `./PanPep_Weight_Inference/tcr_ab.npz`
   - `./PanPep_Weight_Inference/peptide_ab.npz`
