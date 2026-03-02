@@ -1,0 +1,3 @@
+[submodule "inference/UniPMT"]
+	path = inference/UniPMT
+	url = https://github.com/ethanmock/UniPMT.git
