@@ -1,0 +1,6 @@
+[submodule "external/UniPMT"]
+	path = external/UniPMT
+	url = https://github.com/ethanmock/UniPMT.git
+[submodule "inferece/UniPMT"]
+	path = inferece/UniPMT
+	url = https://github.com/ethanmock/UniPMT.git
