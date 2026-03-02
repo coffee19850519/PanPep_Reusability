@@ -1,3 +1,6 @@
 [submodule "inference/UniPMT"]
 	path = inference/UniPMT
 	url = https://github.com/ethanmock/UniPMT.git
+[submodule "inference/ERGO-II"]
+	path = inference/ERGO-II
+	url = https://github.com/IdoSpringer/ERGO-II.git
