@@ -532,7 +532,84 @@ def load_support_data(pep, data_dir):
 #     output.to_csv(os.path.join(result, "k_shot_" + pep + ".csv"), index=False)
 
 #     return data
+def sample_multi_round_support_data(positive_tcrs, neg_background, neg_reshuffling,
+                                     k_shot, update_step_test, pep, result_dir):
+    """
+    Sample independent support sets for each inner-loop finetuning step.
+    Odd steps (0, 2, 4, ...) draw negatives from background library;
+    even steps (1, 3, 5, ...) draw negatives from reshuffling library.
 
+    Args:
+        positive_tcrs: list of positive TCR sequences for this peptide
+        neg_background: list of background negative TCR sequences (pre-filtered, no positives)
+        neg_reshuffling: list of reshuffling negative TCR sequences (pre-filtered, no positives)
+        k_shot: number of positives (and negatives) per round
+        update_step_test: total number of inner-loop steps
+        pep: peptide string (for file naming)
+        result_dir: directory to save the CSV log
+
+    Returns:
+        (rounds_list, all_support_tcrs_set)
+        rounds_list: list of [tcr_list, label_list] per round
+        all_support_tcrs_set: set of all TCR sequences used across all rounds
+    """
+    positive_set = set(positive_tcrs)
+
+    # Pre-filter negative libraries to exclude positives
+    bg_filtered = [t for t in neg_background if t not in positive_set]
+    rs_filtered = [t for t in neg_reshuffling if t not in positive_set]
+
+    rounds_list = []
+    all_support_tcrs = set()
+    csv_rows = []
+
+    # Positives are sampled once and shared across all rounds
+    pos_sampled = random.sample(positive_tcrs, k_shot)
+
+    for r in range(update_step_test):
+        # Alternate negative source: even index → background, odd index → reshuffling
+        if r % 2 == 0:
+            neg_pool = bg_filtered
+            neg_source = 'background'
+        else:
+            neg_pool = rs_filtered
+            neg_source = 'reshuffling'
+
+        neg_sampled = random.sample(neg_pool, k_shot)
+
+        tcr_list = pos_sampled + neg_sampled
+        label_list = [1] * k_shot + [0] * k_shot
+
+        rounds_list.append([tcr_list, label_list])
+        all_support_tcrs.update(tcr_list)
+
+        for tcr, label in zip(tcr_list, label_list):
+            csv_rows.append({'round': r, 'tcr': tcr, 'label': label, 'source': neg_source if label == 0 else 'positive'})
+
+    # Save for reproducibility
+    df = pd.DataFrame(csv_rows)
+    df.to_csv(os.path.join(result_dir, f"k_shot_multi_round_{pep}.csv"), index=False)
+
+    return rounds_list, all_support_tcrs
+
+
+def get_query_data_multi_round(all_ranking_data, all_support_tcrs):
+    """
+    Build query data by excluding all support TCRs used across all rounds.
+
+    Args:
+        all_ranking_data: [tcr_list, label_list] for this peptide
+        all_support_tcrs: set of TCR sequences to exclude
+
+    Returns:
+        [filtered_tcr_list, filtered_label_list]
+    """
+    mask = ~np.isin(all_ranking_data[0], list(all_support_tcrs))
+    F_data = [
+        np.array(all_ranking_data[0])[mask].tolist(),
+        np.array(all_ranking_data[1])[mask].tolist()
+    ]
+    return F_data
 def save_support_data(all_ranking_data, k_shot, pep, result, chain_type=None):
     """
     保存k-shot数据，如果提供了chain_type，文件名中会包含该信息
@@ -716,6 +793,37 @@ def generate_selected_idx(n, generator=None):
         yield a[i]
 
 
+def load_multi_round_support_data(pep, support_dir):
+    """
+    Load pre-saved multi-round support data from a CSV file.
+
+    Args:
+        pep: peptide string
+        support_dir: directory containing k_shot_multi_round_{pep}.csv files
+
+    Returns:
+        (rounds_list, all_support_tcrs)
+        rounds_list: list of [tcr_list, label_list] per round
+        all_support_tcrs: set of all TCR sequences used across all rounds
+    """
+    file_path = os.path.join(support_dir, f"k_shot_multi_round_{pep}.csv")
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Can't find multi-round support file: {file_path}")
+
+    df = pd.read_csv(file_path)
+    rounds_list = []
+    all_support_tcrs = set()
+
+    for r in sorted(df['round'].unique()):
+        round_df = df[df['round'] == r]
+        tcr_list = round_df['tcr'].tolist()
+        label_list = round_df['label'].tolist()
+        rounds_list.append([tcr_list, label_list])
+        all_support_tcrs.update(tcr_list)
+
+    return rounds_list, all_support_tcrs
+
+    
 def return_m_from_n(m, n=None, generate_idx=None):
     """
     从长度为n的生成器中返回m项 (n未指定时，生成器不��空；生成器未指定时，n不能为空) (且m<=n)
@@ -739,6 +847,239 @@ def return_m_from_n(m, n=None, generate_idx=None):
 # configure the model architecture and parameters
 Model_config = [
     ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+Model_config_large = [
+    ('self_attention', [[1,  128,  5],[1,  128,  5], [1,  128,  5]]),
+    ('linear', [128, 128]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 19456])
+]
+Model_config_attention8= [
+    ('self_attention', [[8, 5, 5], [8, 5, 5], [8, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_large_16 = [
+    ('self_attention', [[1,  16,  5],[1,  16,  5], [1,  16,  5]]),
+    ('linear', [16, 16]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 2432])
+]
+
+Model_config_large_32 = [
+    ('self_attention', [[1,32,  5],[1,32,  5], [1, 32,  5]]),
+    ('linear', [32,32]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2,4864])
+]
+
+Model_config_attention_stack5 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+Model_config_conv_stack3 = [
+    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+
+Model_config_multi_head_attention5_conv3 = [
+    ('res_multi_head_attention_block', [[5, 5, 5, 5], [5, 5, 5, 5], [5, 5, 5, 5],[5, 5, 5, 5],[5, 5, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+Model_config_attention5_conv3_large = [
+    ('res_attention_block', [[8, 16, 5], [8, 16,16], [8, 16, 16],[8, 16,16],[8, 16, 16]]), 
+    ('linear', [16, 16]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 2560])
+]
+
+
+Model_config_attention5_conv3 = [
+    ('res_attention_block', [[8, 5, 5], [8, 5, 5], [8, 5, 5],[8, 5, 5],[8, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+Model_config_conv_stack6 = [
+    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+Model_config_conv_stack8 = [
+    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+Model_config_conv_stack12 = [
+    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 640])
+]
+
+Model_config_attention_stack10 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention16 = [
+    ('self_attention', [[16, 5, 5], [16, 5, 5], [16, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention_stack8 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention_stack9 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention_stack12 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention_stack7 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention_stack6 = [
+    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5]]), 
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+
+Model_config_attention24 = [
+    ('self_attention', [[24, 5, 5], [24, 5, 5], [24, 5, 5]]),
     ('linear', [5, 5]),
     ('relu', [True]),
     ('conv2d', [16, 1, 2, 1, 1, 0]),

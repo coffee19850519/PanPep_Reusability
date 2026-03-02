@@ -21,6 +21,8 @@ argparser.add_argument('--C', type=int, help='Number of bases', default=3)
 argparser.add_argument('--R', type=int, help='Epitope Index matrix vector length', default=3)
 argparser.add_argument('--L', type=int, help='Epitope embedding length', default=75)
 argparser.add_argument('--fold', type=int, help='which fold to use (1-10)', required=True)
+argparser.add_argument('--save_alpha_dir', type=str, default='alpha_all', help='directory to save finetuned alpha model (majority)')
+argparser.add_argument('--save_beta_dir', type=str, default='beta_all', help='directory to save finetuned beta model (majority)')
 argparser.add_argument('--peptide_encoding', type=str,
                         default='/public/home/wxy/Panpep1/encoding/peptide_ab.npz',
                         help='Path to peptide encoding file')
@@ -114,67 +116,45 @@ def zero_task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_
     return peptides, query_x
 def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=None):
     """
-    Creates task-level embeddings for peptide-TCR interaction prediction.
-    
     Parameters:
-        pep: str
-            The peptide sequence to be embedded
-        tcr_data: list
-            A list containing TCR sequences and their labels in the format:
-            [support_TCRs, support_labels, (optional)query_TCRs]
-        peptide_encoding_dict: dict, optional
-            Pre-computed peptide encodings {peptide_sequence: encoding_tensor}
-        tcr_encoding_dict: dict, optional
-            Pre-computed TCR encodings {TCR_sequence: encoding_tensor}
-            
+        param pep: peptide序列
+        param tcr_data: TCR及其标签列表
+        param peptide_encoding_dict: 预计算的peptide编码字典 {peptide序列: 编码tensor}
+        param tcr_encoding_dict: 预计算的TCR编码字典 {TCR序列: 编码tensor}
     Returns:
-        tuple containing:
-            - peptides: torch.FloatTensor
-                Flattened peptide embedding (shape: [1, 75])
-            - support_x: torch.FloatTensor or None
-                Support set embeddings if available (shape: [1, n_support, 40, 5])
-            - support_y: torch.LongTensor or None
-                Support set labels if available (shape: [1, n_support])
-            - query_x: torch.FloatTensor
-                Query set embeddings (shape: [1, n_query, 40, 5])
-                
-    Note:
-        If support set is empty, support_x and support_y will be None
+        返回peptide embedding，support set embedding，support set labels和query set embedding
+        如果support set为空，对应的support_x和support_y返回None
     """
-    # Extract TCR sequences and labels from input data
-    spt_TCRs = tcr_data[0]  # Support set TCRs
-    ypt = tcr_data[1]       # Support set labels
-    peptides = torch.FloatTensor(1, 75)  # Initialize peptide tensor
+    spt_TCRs = tcr_data[0]
+    ypt = tcr_data[1]
+    peptides = torch.FloatTensor(1, 75)
     
-    # Handle query TCRs if provided, otherwise use placeholder
     if len(tcr_data) > 2:
         qry_TCRs = tcr_data[2]
     else:
         qry_TCRs = ['None']
     query_x = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
 
-    # Get peptide embedding from dictionary or compute it
+    # 从peptide字典获取或计算peptide编码
     if peptide_encoding_dict and pep in peptide_encoding_dict:
         peptide_embedding = peptide_encoding_dict[pep]
     else:
         peptide_embedding = add_position_encoding(aamapping(pep, 15))
 
-    # Handle case when support set is empty
+    # 检查support set是否为空
     if not spt_TCRs or not ypt:
         peptides[0] = peptide_embedding.flatten()
         
-        # Process query set if available
+        # 处理query set
         if len(tcr_data) > 2:
             tcr_embeddings = []
             for tcr in qry_TCRs:
-                # Get TCR embedding from dictionary or compute it
                 if tcr_encoding_dict and tcr in tcr_encoding_dict:
                     tcr_embed = tcr_encoding_dict[tcr]
                 else:
                     tcr_embed = add_position_encoding(aamapping(tcr, 25))
                 tcr_embeddings.append(tcr_embed)
             
-            # Stack TCR embeddings and combine with peptide embedding
             tcr_embeddings = torch.stack(tcr_embeddings)
             peptide_expanded = peptide_embedding.unsqueeze(0).expand(len(qry_TCRs), -1, -1)
             temp = torch.cat([peptide_expanded, tcr_embeddings], dim=1)
@@ -184,37 +164,33 @@ def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=
             
         return peptides, None, None, query_x
 
-    # Process support set when available
+    # 如果support set不为空，继续处理
     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
     support_y = np.zeros((1, len(ypt)), dtype=np.int64)
     
-    # Create embeddings for support set TCRs
+    # 处理support set
     temp = []
     for tcr in spt_TCRs:
-        # Get TCR embedding from dictionary or compute it
         if tcr_encoding_dict and tcr in tcr_encoding_dict:
             tcr_embed = tcr_encoding_dict[tcr]
         else:
             tcr_embed = add_position_encoding(aamapping(tcr, 25))
-        # Concatenate peptide and TCR embeddings
         temp.append(torch.cat([peptide_embedding, tcr_embed]).unsqueeze(0))
     
     support_x[0] = torch.cat(temp)
     support_y[0] = np.array(ypt)
     peptides[0] = peptide_embedding.flatten()
 
-    # Process query set if available
+    # 处理query set
     if len(tcr_data) > 2:
         tcr_embeddings = []
         for tcr in qry_TCRs:
-            # Get TCR embedding from dictionary or compute it
             if tcr_encoding_dict and tcr in tcr_encoding_dict:
                 tcr_embed = tcr_encoding_dict[tcr]
             else:
                 tcr_embed = add_position_encoding(aamapping(tcr, 25))
             tcr_embeddings.append(tcr_embed)
         
-        # Stack TCR embeddings and combine with peptide embedding
         tcr_embeddings = torch.stack(tcr_embeddings)
         peptide_expanded = peptide_embedding.unsqueeze(0).expand(len(qry_TCRs), -1, -1)
         temp = torch.cat([peptide_expanded, tcr_embeddings], dim=1)
@@ -223,6 +199,71 @@ def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=
         query_x[0] = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
 
     return peptides, support_x, torch.LongTensor(support_y), query_x
+
+
+
+def task_embedding_majority(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=None):
+    """
+    tcr_data: [train_alpha, train_label, val_alpha, val_label, test_alpha, test_index]
+    Returns: Epitope_embedding, x_spt, y_spt, x_val, y_val, x_qry
+    """
+    # ============ peptide embedding ============
+    if peptide_encoding_dict and pep in peptide_encoding_dict:
+        peptide_embedding = peptide_encoding_dict[pep]
+    else:
+        peptide_embedding = add_position_encoding(aamapping(pep, 15))
+    peptides = torch.FloatTensor(1, 75)
+    peptides[0] = peptide_embedding.flatten()
+
+    train_TCRs = tcr_data[0]
+    train_labels = tcr_data[1]
+    if train_TCRs and train_labels:
+        x_spt = torch.FloatTensor(1, len(train_TCRs), 40, 5)
+        temp = []
+        for tcr in train_TCRs:
+            if tcr_encoding_dict and tcr in tcr_encoding_dict:
+                tcr_embed = tcr_encoding_dict[tcr]
+            else:
+                tcr_embed = add_position_encoding(aamapping(tcr, 25))
+            temp.append(torch.cat([peptide_embedding, tcr_embed]).unsqueeze(0))
+        x_spt[0] = torch.cat(temp)
+        y_spt = torch.LongTensor(np.array([train_labels], dtype=np.int64))
+    else:
+        x_spt = None
+        y_spt = None
+
+    val_TCRs = tcr_data[2]
+    val_labels = tcr_data[3]
+    if val_TCRs and val_labels:
+        x_val = torch.FloatTensor(1, len(val_TCRs), 40, 5)
+        temp = []
+        for tcr in val_TCRs:
+            if tcr_encoding_dict and tcr in tcr_encoding_dict:
+                tcr_embed = tcr_encoding_dict[tcr]
+            else:
+                tcr_embed = add_position_encoding(aamapping(tcr, 25))
+            temp.append(torch.cat([peptide_embedding, tcr_embed]).unsqueeze(0))
+        x_val[0] = torch.cat(temp)
+        y_val = torch.LongTensor(np.array([val_labels], dtype=np.int64))
+    else:
+        x_val = None
+        y_val = None
+
+    test_TCRs = tcr_data[4]
+    if test_TCRs:
+        x_qry = torch.FloatTensor(1, len(test_TCRs), 40, 5)
+        temp = []
+        for tcr in test_TCRs:
+            if tcr_encoding_dict and tcr in tcr_encoding_dict:
+                tcr_embed = tcr_encoding_dict[tcr]
+            else:
+                tcr_embed = add_position_encoding(aamapping(tcr, 25))
+            temp.append(torch.cat([peptide_embedding, tcr_embed]).unsqueeze(0))
+        x_qry[0] = torch.cat(temp)
+    else:
+        x_qry = None
+
+    return peptides, x_spt, y_spt, x_val, y_val, x_qry
 
 def load_encodings(encoding_path):
     with np.load(encoding_path) as encodings:
@@ -291,8 +332,15 @@ def process_file(input_file, output_file, learning_setting):
     alpha_tcrs = data['alpha']
     beta_tcrs = data['beta']
     labels = data['Label']  # Use Label for processing
-    original_labels = data['label']  # Keep original labels for output
-    
+    if 'label' in data.columns:
+        original_labels = data['label']
+    else:
+        original_labels = pd.Series([0]*len(data))
+
+    if 'set' in data.columns:
+        sets = data['set']
+    else:
+        sets = pd.Series([""]*len(data))
     if learning_setting == 'few-shot':
         # Construct the episode, the input for the panpep in the few-shot setting
         F_data_alpha = {}
@@ -351,10 +399,10 @@ def process_file(input_file, output_file, learning_setting):
             'Epitope': output_peps,
             'alpha': output_alpha_tcrs,
             'beta': output_beta_tcrs,
-            'label': output_labels,
+            'Label': output_labels,
             'score_alpha': ends_alpha,
             'score_beta': ends_beta,
-            'score': avg_scores
+            'Score': avg_scores
         })
         output.to_csv(output_file, index=False)
     
@@ -396,7 +444,6 @@ def process_file(input_file, output_file, learning_setting):
                 end_alpha = model_alpha.meta_forward_score(Epitope_embedding_alpha.to(device), x_qry_alpha.to(device))
                 end_beta = model_beta.meta_forward_score(Epitope_embedding_beta.to(device), x_qry_beta.to(device))
                 
-                # 确保数据在转换为numpy之前先移到CPU
                 if torch.is_tensor(end_alpha[0]):
                     if end_alpha[0].is_cuda:
                         end_alpha_cpu = end_alpha[0].cpu()
@@ -432,77 +479,132 @@ def process_file(input_file, output_file, learning_setting):
             'Epitope': output_peps,
             'alpha': output_alpha_tcrs,
             'beta': output_beta_tcrs,
-            'label': output_labels,
+            'Label': output_labels,
             'score_alpha': starts_alpha,
             'score_beta': starts_beta,
-            'score': avg_scores
+            'Score': avg_scores
         })
         output.to_csv(output_file, index=False)
     
     elif learning_setting == 'majority':
-        # Construct the episode, the input for the panpep in the majority setting
         G_data_alpha = {}
         G_data_beta = {}
-        for i,j in enumerate(Epitopes):
+
+        for i, j in enumerate(Epitopes):
             if j not in G_data_alpha:
-                G_data_alpha[j] = [[],[],[],[]]
-                G_data_beta[j] = [[],[],[],[]]
-            if labels[i] != 'Unknown':
+                G_data_alpha[j] = [[], [], [], [], [], []]
+                G_data_beta[j] = [[], [], [], [], [], []]
+            if sets[i] == 'train':
                 G_data_alpha[j][0].append(alpha_tcrs[i])
                 G_data_alpha[j][1].append(labels[i])
                 G_data_beta[j][0].append(beta_tcrs[i])
                 G_data_beta[j][1].append(labels[i])
-            else:
+            elif sets[i] == 'val':
                 G_data_alpha[j][2].append(alpha_tcrs[i])
+                G_data_alpha[j][3].append(labels[i])
                 G_data_beta[j][2].append(beta_tcrs[i])
-                G_data_alpha[j][3].append(i)  # Store the original index
-                G_data_beta[j][3].append(i)  # Store the original index
+                G_data_beta[j][3].append(labels[i])
+            elif sets[i] == 'test':
+                G_data_alpha[j][4].append(alpha_tcrs[i])
+                G_data_beta[j][4].append(beta_tcrs[i])
+                G_data_alpha[j][5].append(i)
+                G_data_beta[j][5].append(i)
 
-        # Process each epitope
-        ends_alpha = []
-        ends_beta = []
-        output_peps = []
-        output_alpha_tcrs = []
-        output_beta_tcrs = []
-        output_indices = []
-        
-        for i in G_data_alpha:
-            if G_data_alpha[i][2]:  # Check if there are query samples
-                # Convert the input into the embeddings for alpha
-                Epitope_embedding_alpha, x_spt_alpha, y_spt_alpha, x_qry_alpha = task_embedding(i, G_data_alpha[i], peptide_encoding_dict, tcr_encoding_dict)
-                
-                # Convert the input into the embeddings for beta
-                Epitope_embedding_beta, x_spt_beta, y_spt_beta, x_qry_beta = task_embedding(i, G_data_beta[i], peptide_encoding_dict, tcr_encoding_dict)
-                
-                # Support set is used for fine-tune the model and the query set is used to test the performance
-                end_alpha = model_alpha.finetunning(Epitope_embedding_alpha[0].to(device), x_spt_alpha[0].to(device), y_spt_alpha[0].to(device), x_qry_alpha[0].to(device))
-                end_beta = model_beta.finetunning(Epitope_embedding_beta[0].to(device), x_spt_beta[0].to(device), y_spt_beta[0].to(device), x_qry_beta[0].to(device))
-                
-                ends_alpha += list(end_alpha[0])
-                ends_beta += list(end_beta[0])
-                output_peps += [i]*len(G_data_alpha[i][2])
-                output_alpha_tcrs += G_data_alpha[i][2]
-                output_beta_tcrs += G_data_beta[i][2]
-                output_indices += G_data_alpha[i][3]
-                
-                torch.cuda.empty_cache()
-        
-        # Calculate average scores
-        avg_scores = [(a + b) / 2 for a, b in zip(ends_alpha, ends_beta)]
-        
-        # Get the original labels for the output
-        output_labels = [original_labels[idx] for idx in output_indices]
-        
+        output_peps, output_alpha_tcrs, output_beta_tcrs, output_indices = [], [], [], []
+        starts_alpha, starts_beta = [], []
+
+        for epitope in G_data_alpha:
+            if not G_data_alpha[epitope][4]:
+                continue
+
+            Epitope_embedding_alpha, x_spt_alpha, y_spt_alpha, x_val_alpha, y_val_alpha, x_qry_alpha = \
+                task_embedding_majority(epitope, G_data_alpha[epitope], peptide_encoding_dict, tcr_encoding_dict)
+            Epitope_embedding_beta, x_spt_beta, y_spt_beta, x_val_beta, y_val_beta, x_qry_beta = \
+                task_embedding_majority(epitope, G_data_beta[epitope], peptide_encoding_dict, tcr_encoding_dict)
+
+            save_alpha_dir = os.path.join(args.save_alpha_dir, epitope)
+            save_beta_dir  = os.path.join(args.save_beta_dir, epitope)
+            os.makedirs(save_alpha_dir, exist_ok=True)
+            os.makedirs(save_beta_dir, exist_ok=True)
+
+            model_alpha.finetunning_majority(
+                Epitope_embedding_alpha[0].to(device),
+                x_spt_alpha[0].to(device),
+                y_spt_alpha[0].to(device),
+                x_val_alpha[0].to(device),
+                y_val_alpha[0].to(device),
+                x_qry_alpha[0].to(device),
+                save_dir=save_alpha_dir
+            )
+            model_beta.finetunning_majority(
+                Epitope_embedding_beta[0].to(device),
+                x_spt_beta[0].to(device),
+                y_spt_beta[0].to(device),
+                x_val_beta[0].to(device),
+                y_val_beta[0].to(device),
+                x_qry_beta[0].to(device),
+                save_dir=save_beta_dir
+            )
+
+            alpha_csv = os.path.join(save_alpha_dir, "step_final_trainval_loss.csv")
+            beta_csv  = os.path.join(save_beta_dir,  "step_final_trainval_loss.csv")
+            df_alpha = pd.read_csv(alpha_csv)
+            df_beta  = pd.read_csv(beta_csv)
+
+            if "step" in df_alpha.columns and "step" in df_beta.columns:
+                df_alpha = df_alpha.set_index("step")
+                df_beta = df_beta.set_index("step")
+            else:
+                df_alpha.index = range(len(df_alpha))
+                df_beta.index = range(len(df_beta))
+
+            merged_avg = pd.DataFrame(index=df_alpha.index)
+            for col in df_alpha.columns:
+                if col in df_beta.columns:
+                    merged_avg[col] = (df_alpha[col] + df_beta[col]) / 2
+            merged_avg = merged_avg.reset_index()
+            if "step" in merged_avg.columns:
+                merged_avg = merged_avg.rename(columns={"index": "step"})
+            best_idx = merged_avg['val_loss'].idxmin()
+            best_step = int(merged_avg.loc[best_idx, 'step'])
+
+            pt_file_alpha = os.path.join(save_alpha_dir, f"step_{best_step}_finetuned_state_dict.pt")
+            pt_file_beta  = os.path.join(save_beta_dir,  f"step_{best_step}_finetuned_state_dict.pt")
+            model_alpha.net.load_state_dict(torch.load(pt_file_alpha, map_location=device))
+            model_beta.net.load_state_dict(torch.load(pt_file_beta,  map_location=device))
+
+            start_alpha = model_alpha.inference_with_params(x_qry_alpha[0].to(device), model_alpha.net)
+            start_beta  = model_beta.inference_with_params(x_qry_beta[0].to(device), model_beta.net)
+
+            starts_alpha += list(start_alpha[0])
+            starts_beta  += list(start_beta[0])
+
+            query_indices = G_data_alpha[epitope][5]
+            num = len(query_indices)
+            output_peps += [epitope] * num
+            output_alpha_tcrs += G_data_alpha[epitope][4]
+            output_beta_tcrs  += G_data_beta[epitope][4]
+            output_indices += query_indices
+
+            torch.cuda.empty_cache()
+
+        avg_scores = [(a + b) / 2 for a, b in zip(starts_alpha, starts_beta)]
+        output_labels = [labels[idx] for idx in output_indices]
         output = pd.DataFrame({
             'Epitope': output_peps,
             'alpha': output_alpha_tcrs,
             'beta': output_beta_tcrs,
-            'label': output_labels,
-            'score_alpha': ends_alpha,
-            'score_beta': ends_beta,
-            'score': avg_scores
+            'Label': output_labels,
+            'score_alpha': starts_alpha,
+            'score_beta': starts_beta,
+            'Score': avg_scores
         })
         output.to_csv(output_file, index=False)
+        print(f"[INFO] Final (meta-learning) query output saved: {output_file}")
+
+
+
+
     elif learning_setting == 'Meta-learner':
         # Construct the episode, the input for the panpep in the zero-shot setting
         Z_data_alpha = {}
@@ -550,7 +652,8 @@ def process_file(input_file, output_file, learning_setting):
                 output_indices += Z_data_alpha[i][3]
                 
                 torch.cuda.empty_cache()
-        
+        print(starts_alpha)
+        print(starts_beta)
         # Calculate average scores
         avg_scores = [(a + b) / 2 for a, b in zip(starts_alpha, starts_beta)]
         
@@ -561,10 +664,10 @@ def process_file(input_file, output_file, learning_setting):
             'Epitope': output_peps,
             'alpha': output_alpha_tcrs,
             'beta': output_beta_tcrs,
-            'label': output_labels,
+            'Label': output_labels,
             'score_alpha': starts_alpha,
             'score_beta': starts_beta,
-            'score': avg_scores
+            'Score': avg_scores
         })
         output.to_csv(output_file, index=False)
 

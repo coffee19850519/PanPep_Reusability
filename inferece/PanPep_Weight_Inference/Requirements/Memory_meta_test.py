@@ -10,6 +10,7 @@ from torch.utils.data import TensorDataset, DataLoader
 from torch import optim
 import numpy as np
 import math
+import pandas as pd
 from Requirements.learner_test import Learner
 from copy import deepcopy
 import argparse
@@ -285,17 +286,19 @@ class Memory_Meta(nn.Module):
         embedding = net(x_qry, fast_weights, bn_training=False, return_embedding=True).cpu().detach().numpy()
         return embedding
 
-    def finetunning(self, peptide, x_spt, y_spt, x_qry, balance_loss=False, return_params=False):
+    def finetunning(self, peptide, x_spt, y_spt, x_qry, balance_loss=False, return_params=False, multi_support=None):
         """
         Fine-tune the model on the support set and test on the query set.
 
         Parameters:
             peptide: Peptide embedding
-            x_spt: Support set embeddings
-            y_spt: Support set labels
+            x_spt: Support set embeddings (used for step 0 if multi_support is None)
+            y_spt: Support set labels (used for step 0 if multi_support is None)
             x_qry: Query set embeddings
             balance_loss: Whether to balance the loss with class weights
             return_params: Whether to return updated parameters
+            multi_support: Optional list of (x_spt_i, y_spt_i) tuples, one per inner-loop step.
+                           When provided, each step uses a different support set.
 
         Returns:
             Binding scores for the TCRs in the query set in the few-shot setting.
@@ -306,11 +309,17 @@ class Memory_Meta(nn.Module):
 
         net1 = deepcopy(self.net)
 
-        logits = net1(x_spt)
-        if balance_loss:
-            loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
+        # Step 0: use multi_support[0] if provided, else original x_spt/y_spt
+        if multi_support is not None:
+            x_spt_0, y_spt_0 = multi_support[0]
         else:
-            loss = F.cross_entropy(logits, y_spt)
+            x_spt_0, y_spt_0 = x_spt, y_spt
+
+        logits = net1(x_spt_0)
+        if balance_loss:
+            loss = F.cross_entropy(logits, y_spt_0, weight=torch.tensor([2, 1], device=y_spt_0.device, dtype=torch.float))
+        else:
+            loss = F.cross_entropy(logits, y_spt_0)
 
         grad = torch.autograd.grad(loss, net1.parameters(), retain_graph=True)
         fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, net1.parameters())))
@@ -329,11 +338,17 @@ class Memory_Meta(nn.Module):
                 pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
 
             for k in range(1, self.update_step_test):
-                logits = net1(x_spt, fast_weights, bn_training=True)
-                if balance_loss:
-                    loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
+                # Steps 1..N: use multi_support[k] if provided, else original x_spt/y_spt
+                if multi_support is not None:
+                    x_spt_k, y_spt_k = multi_support[k]
                 else:
-                    loss = F.cross_entropy(logits, y_spt)
+                    x_spt_k, y_spt_k = x_spt, y_spt
+
+                logits = net1(x_spt_k, fast_weights, bn_training=True)
+                if balance_loss:
+                    loss = F.cross_entropy(logits, y_spt_k, weight=torch.tensor([2, 1], device=y_spt_k.device, dtype=torch.float))
+                else:
+                    loss = F.cross_entropy(logits, y_spt_k)
 
                 grad = torch.autograd.grad(loss, fast_weights)
                 fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, fast_weights)))
@@ -342,8 +357,6 @@ class Memory_Meta(nn.Module):
 
                 with torch.no_grad():
                     pred_q = F.softmax(logits_q, dim=1)
-                    print(f"pred_q shape: {pred_q.shape}")
-                    print(f"pred_q[:, 1] shape: {pred_q[:, 1].shape}")
 
             end.append(pred_q[:, 1].cpu().numpy())
 
@@ -353,6 +366,99 @@ class Memory_Meta(nn.Module):
                     param.copy_(fast_weight)
             return end, net1
         return end
+
+
+     
+    def finetunning_majority(self, peptide, x_spt, y_spt, x_val, y_val, x_qry, save_dir=None, balance_loss=False, return_params=False):
+        querysz = x_qry.size(0)
+        start = []
+        end = []
+        train_losses, val_losses = [], []
+        val_score_label_rows = []
+
+        net1 = deepcopy(self.net)
+
+        logits = net1(x_spt)
+        if balance_loss:
+            loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
+        else:
+            loss = F.cross_entropy(logits, y_spt)
+        train_losses.append(loss.item())
+
+        with torch.no_grad():
+            logits_val = net1(x_val)
+            val_loss = F.cross_entropy(logits_val, y_val)
+            val_losses.append(val_loss.item())
+            val_scores = F.softmax(logits_val, dim=1)[:, 1].cpu().numpy()
+            val_labels = y_val.cpu().numpy()
+            for i in range(len(val_scores)):
+                val_score_label_rows.append([0, val_scores[i], val_labels[i]])
+
+        grad = torch.autograd.grad(loss, net1.parameters(), retain_graph=True)
+        fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, net1.parameters())))
+
+        with torch.no_grad():
+            logits_q = net1(x_qry)
+            pred_q = F.softmax(logits_q, dim=1)
+            start.append(pred_q[:, 1].cpu().numpy())
+
+        for k in range(1, self.update_step_test):
+            logits = net1(x_spt, fast_weights, bn_training=True)
+            if balance_loss:
+                loss = F.cross_entropy(logits, y_spt, weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
+            else:
+                loss = F.cross_entropy(logits, y_spt)
+            train_losses.append(loss.item())
+
+            # val
+            with torch.no_grad():
+                logits_val = net1(x_val, fast_weights, bn_training=False)
+                val_loss = F.cross_entropy(logits_val, y_val)
+                val_losses.append(val_loss.item())
+                val_scores = F.softmax(logits_val, dim=1)[:, 1].cpu().numpy()
+                val_labels = y_val.cpu().numpy()
+                for i in range(len(val_scores)):
+                    val_score_label_rows.append([k, val_scores[i], val_labels[i]])
+
+            grad = torch.autograd.grad(loss, fast_weights)
+            fast_weights = list(map(lambda p: p[1] - self.update_lr * p[0], zip(grad, fast_weights)))
+
+            logits_q = net1(x_qry, fast_weights, bn_training=False)
+            with torch.no_grad():
+                pred_q = F.softmax(logits_q, dim=1)
+            if k == self.update_step_test - 1:
+                end.append(pred_q[:, 1].cpu().numpy())
+
+            if save_dir is not None:
+                os.makedirs(save_dir, exist_ok=True)
+                with torch.no_grad():
+                    for param, fast_weight in zip(net1.parameters(), fast_weights):
+                        param.copy_(fast_weight)
+                torch.save(net1.state_dict(), os.path.join(save_dir, f'step_{k}_finetuned_state_dict.pt'))
+
+            if save_dir is not None:
+                os.makedirs(save_dir, exist_ok=True)
+                with torch.no_grad():
+                    for param, fast_weight in zip(net1.parameters(), fast_weights):
+                        param.copy_(fast_weight)
+                torch.save(net1.state_dict(), os.path.join(save_dir, f'step_{k}_finetuned_state_dict.pt'))
+
+        if save_dir is not None:
+            pd.DataFrame({
+                'step': list(range(len(train_losses))),
+                'train_loss': train_losses,
+                'val_loss': val_losses
+            }).to_csv(os.path.join(save_dir, f'step_final_trainval_loss.csv'), index=False)
+            pd.DataFrame(val_score_label_rows, columns=['step', 'score', 'label']).to_csv(
+                os.path.join(save_dir, f'step_final_val_score_label.csv'), index=False)
+        if return_params:
+            with torch.no_grad():
+                for param, fast_weight in zip(net1.parameters(), fast_weights):
+                    param.copy_(fast_weight)
+            return end, net1
+        return end
+
+
 
     def get_kshot_data(self, x_spts, y_spts):
         k_shot = 2
@@ -534,19 +640,16 @@ class Memory_Meta(nn.Module):
         return end
 
     def inference_with_params(self, x_qry, net):
-        
         with torch.no_grad():
             logits_q = net(x_qry, net.parameters(), bn_training=False)
             pred_q = F.softmax(logits_q, dim=1)
             end = [pred_q[:, 1].cpu().numpy()]
         return end
     
-
     def inference_with_params_embedding(self, x_qry, net):
 
         with torch.no_grad():
-            embeddings = net(x_qry,net.parameters(), bn_training=False, return_embedding=True)
-            logits_q = net(x_qry,net.parameters(), bn_training=False)
+            logits_q,embeddings = net(x_qry,net.parameters(), bn_training=False, save_linear_input=True)
             pred_q = F.softmax(logits_q, dim=1)
             predictions = pred_q[:, 1].cpu().numpy()
 
