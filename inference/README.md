@@ -107,10 +107,9 @@ DLpTCR is a deep learning model for TCR-epitope binding prediction. It supports 
    ./DLpTCR/code/
    ```
 
-### Checkpoints
+### Model Weights
 
-[Download Checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/DLpTCR?csf=1&web=1&e=LuQ4XB)
-
+[Download Model Weights](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgAKjTsOgBbkQo60RUZ3uLR-AUA8Zyac9UBImaihdQwdJ58?e=aacH2l)
 ### Scripts
 
 Located in `./inference/DLpTCR_ext/`:
@@ -202,9 +201,9 @@ ERGO-II is a deep learning model for TCR-peptide binding prediction using LSTM-b
    ./ERGO-II/
    ```
 
-### Checkpoints
+### Model Weights
 
-[Download Checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/ERGO-II?csf=1&web=1&e=7zR9pX)
+[Download Model Weights](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgBZADfs9UYXTK8-NBHljZUPASJL6ADm3VFD1OaI6T7ajVo?e=IOw7j3)
 
 ### Scripts
 
@@ -314,9 +313,9 @@ UnifyImmun is a transformer-based model for TCR-peptide binding prediction using
    ./UnifyImmun/source/
    ```
 
-### Checkpoints
+### Model Weights
 
-[Download Checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/Uniftylmmun?csf=1&web=1&e=qi0SQI)
+[Download Model Weights](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgCSqLP_BVNZRoK8DBonEfK-AWhfsYlpJ-SJsrkGgpx__LA?e=Hb0UD5)
 
 ### Scripts
 
@@ -393,9 +392,9 @@ A GPU-accelerated Random Forest classifier (cuML) for TCR-peptide binding predic
 
 Scripts are located in `./inference/Random_Forest/`. No additional repository setup is required.
 
-### Checkpoints
+### Model Weights
 
-[Download Checkpoints](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/Random_Forest?csf=1&web=1&e=JuVUbx)
+[Download Model Weights](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQCZYojO_P0oS6HUEie8TQTIAQkoh6GFA0GY1bjUqC7fPcw?e=UKLdBx)
 
 ### Dependencies
 
@@ -453,9 +452,9 @@ Each TCR-peptide pair is encoded as a concatenated feature vector:
 
 If a sequence is not found in the pre-computed `.npz` cache, the script falls back to real-time encoding. Cache hit statistics are printed at the end of inference.
 
-Supplementary fig 5 [Unitylmmun independent Dataset](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/Unitylmmun_independent_Data.csv?d=w311745a2b1704f97bd85f46fef405300&csf=1&web=1&e=VbvbSJ)
+Supplementary fig 5 [Unitylmmun independent Dataset](https://mailmissouri-my.sharepoint.com/:x:/g/personal/hefe_umsystem_edu/IQCiRRcxcLGXT72F9G_vQFMAAUW7AXnGznjeec9Zm3b0WjA?e=Bd2MV5)
 
-Supplementary fig 5 [Unifylmmun triple Dataset](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/Unifylmmun_triple_Data.csv?d=wa0b721b88b37437ea879070454c6a9ef&csf=1&web=1&e=LTYHsz)
+Supplementary fig 5 [Unifylmmun triple Dataset](https://mailmissouri-my.sharepoint.com/:x:/g/personal/hefe_umsystem_edu/IQC4IbegN4t-Q6h5BwRUxqnvAZ7FTFSnmZ9z_s2QNFF-JBA?e=Rw6PQ8)
 
 ---
 
@@ -471,7 +470,7 @@ Follow the instructions in the official UniPMT [GitHub](https://github.com/ethan
 
 The corresponding directory in this project is `./inference/UniPMT/`.
 
-Supplementary fig 5 [UniPMT Test Data]([UniPMT_data.csv](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/UniPMT_data.csv?d=wc2b6d66d50d14b1b9f18bc5a0cccf9b5&csf=1&web=1&e=D11YxI))
+Supplementary fig 5 [UniPMT Test Data](https://mailmissouri-my.sharepoint.com/:x:/g/personal/hefe_umsystem_edu/IQBt1rbC0VAbS58YvFoMzPm1AeVZupg93xR_DVZg28IrrA8?e=EijUp0)
 
 ---
 
