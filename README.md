@@ -278,7 +278,7 @@ python inferece_ab.py \
 ---
 
 ## Data Download
-The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.16943691).
+The data and model weights in this study are publicly available on [Zenodo](10.5281/zenodo.16943690).
 
 ## Original Study
 
