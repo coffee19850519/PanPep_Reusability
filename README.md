@@ -3,7 +3,7 @@
 This epository contains the code associated with our reusability study upon the research "Pan-Peptide Meta Learning for T-Cell Receptor-Antigen Binding Recognition"
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/username/repo/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18793638.svg)](https://doi.org/10.5281/zenodo.18793638)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18861905.svg)](https://doi.org/10.5281/zenodo.18861905)
 
 
 ## Overview
@@ -277,8 +277,8 @@ python inferece_ab.py \
 
 ---
 
-## Data Download
-The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.18793638).
+## Data and Model Weights
+The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.18861905).
 
 ## Original Study
 
