@@ -25,25 +25,137 @@ Located in `./inference/PanPep_Weight_Inference/`. Four inference modes are avai
 
 ## General Usage
 
+---
+### Meta-learner
+
 ```bash
 python inference_meta_learner.py \
-    --gpu 0,1,2,3,4,5,6,7 \        # Select GPUs
-    --distillation 3 \              # Number of distillation steps
-    --upper_limit 100000 \          # Batch size
-    --k_shot 0 \                    # 0 for meta-learner mode
-    --test_data ./few-shot.csv \    # Positive samples
-    --negative_data ./Control_dataset.txt \  # Background database
-    --model_path ./Requirements \   # Model path
-    --result_dir result/few-meta \  # Output directory
+    --gpu 0 \
+    --distillation 3 \
+    --batch_size 10000 \
+    --test_data ./data/test_data.csv \
+    --negative_data ./data/Control_dataset.txt \
+    --model_path ./Requirements \
+    --result_dir result/meta \
     --peptide_encoding ./peptide_b.npz \
     --tcr_encoding ./tcr_b.npz
 ```
 
-## Mode-Specific Notes
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gpu` | GPU device IDs (comma-separated) | `0,1` |
+| `--distillation` | Number of distillation steps | `3` |
+| `--batch_size` | Upper limit for batch size | `10000` |
+| `--test_data` | Path to test data CSV | `./data/test_data.csv` |
+| `--negative_data` | Path to negative TCR data | `./data/Control_dataset.txt` |
+| `--model_path` | Path to model checkpoint directory | `./Requirements` |
+| `--result_dir` | Directory for output Parquet files | `result/majority_reproduction11111` |
+| `--peptide_encoding` | Path to peptide encoding `.npz` file | `./peptide_b.npz` |
+| `--tcr_encoding` | Path to TCR encoding `.npz` file | `./tcr_b.npz` |
 
-- **Few-shot** and **Majority** modes include an additional `--kshot_dir` parameter for storing selected fine-tuning samples.
-- In **Majority** mode, `--k_shot` represents a ratio rather than an absolute count.
+---
+
+### Zero-shot
+
+```bash
+python inference_zero_shot.py \
+    --gpu 0 \
+    --distillation 50 \
+    --batch_size 10000 \
+    --test_data ./data/test_data.csv \
+    --negative_data ./data/Control_dataset.txt \
+    --model_path ./Requirements \
+    --result_dir result/zero \
+    --peptide_encoding ./peptide_b.npz \
+    --tcr_encoding ./tcr_b.npz \
+    --model attention5_conv3_large
+```
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gpu` | GPU device IDs (comma-separated) | `0` |
+| `--distillation` | Number of distillation steps | `50` |
+| `--batch_size` | Upper limit for batch size | `10000` |
+| `--test_data` | Path to test data CSV | `./data/test_data.csv` |
+| `--negative_data` | Path to negative TCR data | `./data/Control_dataset.txt` |
+| `--model_path` | Path to model checkpoint directory | `./Requirements` |
+| `--result_dir` | Directory for output Parquet files | `result/0000` |
+| `--peptide_encoding` | Path to peptide encoding `.npz` file | `./peptide_b.npz` |
+| `--tcr_encoding` | Path to TCR encoding `.npz` file | `./tcr_b.npz` |
+| `--model` | Model architecture | `attention5_conv3_large` |
+
+---
+
+### Majority
+
+```bash
+python inference_majority.py \
+    --gpu 0 \
+    --distillation 3 \
+    --batch_size 10000 \
+    --support_rate 0.8 \
+    --test_data ./data/test_data.csv \
+    --negative_data ./data/Control_dataset.txt \
+    --model_path ./Requirements \
+    --result_dir result/majority \
+    --support_dir ./support/majority \
+    --peptide_encoding ./peptide_b.npz \
+    --tcr_encoding ./tcr_b.npz
+```
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gpu` | GPU device IDs (comma-separated) | `0` |
+| `--distillation` | Number of distillation steps | `3` |
+| `--batch_size` | Upper limit for batch size | `10000` |
+| `--support_rate` | Fraction of positive TCRs used as support set | `0.8` |
+| `--test_data` | Path to test data CSV | `./data/test_data.csv` |
+| `--negative_data` | Path to negative TCR data | `./data/Control_dataset.txt` |
+| `--model_path` | Path to model checkpoint directory | `./Requirements` |
+| `--result_dir` | Directory for output Parquet files | `result11/majority` |
+| `--support_dir` | Directory for pre-saved support data (generated if not provided) | `./support/majority` |
+| `--peptide_encoding` | Path to peptide encoding `.npz` file | `./peptide_b.npz` |
+| `--tcr_encoding` | Path to TCR encoding `.npz` file | `./tcr_b.npz` |
+
+---
+
+### Few-shot
+
+```bash
+python inference_few_shot.py \
+    --gpu 0 \
+    --mode single \
+    --distillation 3 \
+    --batch_size 10000 \
+    --support 4 \
+    --test_data ./data/test_data.csv \
+    --negative_data ./data/Control_dataset.txt \
+    --model_path ./Requirements \
+    --result_dir result/few \
+    --peptide_encoding ./peptide_b.npz \
+    --tcr_encoding ./tcr_b.npz
+```
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--gpu` | GPU device IDs (comma-separated) | `0` |
+| `--mode` | Inference mode: `single` or `mixed` | `mixed` |
+| `--distillation` | Number of distillation steps | `3` |
+| `--batch_size` | Upper limit for batch size | `10000` |
+| `--support` | K-shot value (number of support samples) | `4` |
+| `--test_data` | Path to test data CSV | `./data/test_data.csv` |
+| `--negative_data` | Path to negative TCR data (query negatives) | `./data/Control_dataset.txt` |
+| `--negative_data_background` | [mixed only] Background negative library for support set | `./data/Control_dataset.txt` |
+| `--negative_data_reshuffling` | [mixed only] Reshuffling negative library for support set | `./data/reshuffling.txt` |
+| `--model_path` | Path to model checkpoint directory | `./Requirements` |
+| `--result_dir` | Directory for output Parquet files | `result_alternating/few/alternating_s4q6` |
+| `--support_dir` | Directory for pre-saved k-shot CSV files (generated if not provided) | `None` |
+| `--peptide_encoding` | Path to peptide encoding `.npz` file | `./peptide_b.npz` |
+| `--tcr_encoding` | Path to TCR encoding `.npz` file | `./tcr_b.npz` |
+| `--update_step_test` | Inner-loop finetuning steps at test time | `3` |
+
+---
 
 ## Metrics Calculation
 
-Use [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction. See [Metrics_Calculation.md](Metrics_Calculation.md) for the full pipeline.
+Use [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction. See [Metrics_Calculation.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md) for the full pipeline.

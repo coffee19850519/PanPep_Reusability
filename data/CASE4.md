@@ -99,13 +99,11 @@ python inference_majority.py \
 ```bash
 python inference_few_shot.py \
     --gpu 0 \
-    --mode mixed \
+    --mode single \
     --distillation 3 \
     --support 4 \
     --test_data ./data/test_data.csv \
     --negative_data ./data/Control_dataset.txt \
-    --negative_data_background ./data/Control_dataset.txt \
-    --negative_data_reshuffling ./data/reshuffling.txt \
     --model_path ./Requirements \
     --result_dir result/few \
     --peptide_encoding ./peptide_a.npz \
@@ -118,4 +116,4 @@ For full parameter descriptions, see [CASE 2](CASE2.md).
 
 ## Metrics Calculation
 
-For sample extraction, use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py). See [Metrics_Calculation.md](Metrics_Calculation.md) for the full pipeline.
+For sample extraction, use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py). See [Metrics_Calculation.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md) for the full pipeline.
