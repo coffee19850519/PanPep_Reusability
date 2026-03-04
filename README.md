@@ -17,7 +17,7 @@ Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/
 ## Quick Start
 
 ### Training Code
-The training pipeline is located in `./train/` with the main entry point at `./train/train.py`.
+The training pipeline is located in `./train/` with the main entry point at [`train.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/train/train.py).
 
 ## CASE 1: Inference Reproducibility with Original Dataset
 
@@ -32,10 +32,10 @@ The training pipeline is located in `./train/` with the main entry point at `./t
 
 Four inference modes are available for different experimental scenarios:
 
-1. **Meta-learner mode** - [inference_meta_learner.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/inference_meta_learner.py)
-2. **Zero-shot mode** - [inference_zero_shot.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/inference_zero_shot.py)
-3. **Majority mode** - [inference_majority.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/inference_majority.py)
-4. **Few-shot mode** - [inference_few_shot.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/inference_few_shot.py)
+1. **Meta-learner mode** - [`inference_meta_learner.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/inference_meta_learner.py)
+2. **Zero-shot mode** - [`inference_zero_shot.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/inference_zero_shot.py)
+3. **Majority mode** - [`inference_majority.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/inference_majority.py)
+4. **Few-shot mode** - [`inference_few_shot.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/inference_few_shot.py)
 
 ### **General Usage**
 
@@ -124,7 +124,7 @@ Use the same inference modes and metrics calculation pipeline as described in [C
   - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=CgX01O)
 
 ### Usage
-For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use `get_sample_indices_1.py` instead of `get_sample_indices_100.py` for sample extraction.
+For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
 ## CASE 4: Training Reproducibility with TCRα Extension
 
 ### Data Requirements
@@ -136,7 +136,7 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
   - [peptide_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EW2_VBo_t7RAs-ysGbkZMacBX_PTniASmuROxwpVjmt_pw?e=dASilC)
 
 ### Usage
-For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use `get_sample_indices_1.py` instead of `get_sample_indices_100.py` for sample extraction.
+For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
 ## CASE 5: Training Reproducibility with TCRαβ Extension
 
 ### Data Requirements
@@ -152,7 +152,7 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 For TCRαβ binding recognition, the inference pipeline involves two steps:
 
-1. **Data Preparation**: Use [samplingab.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/samplingab.py) to format the data for inference:
+1. **Data Preparation**: Use [`samplingab.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/samplingab.py) to format the data for inference:
 
    ```bash
    python samplingab.py \
@@ -170,7 +170,7 @@ For TCRαβ binding recognition, the inference pipeline involves two steps:
    - `--few_shot`: Number of samples for few-shot mode (default: 2)
    - `--output_dir`: Output directory path
 
-2. **Model Inference**: Use [inferece_ab.py](https://github.com/coffee19850519/PanPep_Reusability/blob/main/PanPep_Weight_Inference/inferece_ab.py) to perform TCRαβ binding prediction:
+2. **Model Inference**: Use [`inferece_ab.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/PanPep_Weight_Inference/inferece_ab.py) to perform TCRαβ binding prediction:
 
    ```bash
    python inferece_ab.py \
@@ -213,7 +213,15 @@ python inferece_ab.py \
 
 ### Metrics Calculation
 
-For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use `get_sample_indices_1.py` instead of `get_sample_indices_100.py` for sample extraction.
+For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
+
+---
+
+## TODO
+
+- [ ] Update extracted classification dataset in the paper
+- [ ] Update training pipeline description and related data
+- [ ] Update Jupyter notebooks
 
 ---
 
