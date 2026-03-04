@@ -152,8 +152,6 @@ def create_for_ergo2(
     tcrb_list: List[str],
     output_folder: str,
     tcra_list: Optional[List[str]] = None,
-    mhc_value: str = "UNK",
-    tcell_type_value: str = "UNK",
 ) -> int:
     if tcra_list is not None and len(tcra_list) == len(tcrb_list):
         tra_column = tcra_list
@@ -175,9 +173,9 @@ def create_for_ergo2(
                 "TRAJ": [""] * n,
                 "TRBV": [""] * n,
                 "TRBJ": [""] * n,
-                "T-Cell-Type": [tcell_type_value] * n,
+                "T-Cell-Type": [""]  * n,
                 "Peptide": [pep] * n,
-                "MHC": [mhc_value] * n,
+                "MHC": [""]  * n,
             }
         )
 
@@ -215,8 +213,6 @@ def main():
     parser.add_argument("--tcr-file", required=True, help="TCR beta file path (txt/csv/parquet).")
     parser.add_argument("--tcra-file", default=None, help="Optional TCR alpha file path for DLpTCR/ERGO.")
     parser.add_argument("--output-folder", required=True, help="Output folder.")
-    parser.add_argument("--mhc", default="UNK", help="Default MHC value for ERGO-II input.")
-    parser.add_argument("--tcell-type", default="UNK", help="Default T-Cell-Type value for ERGO-II input.")
     args = parser.parse_args()
 
     if args.target == "legacy":
@@ -264,8 +260,6 @@ def main():
             tcrb_list=tcrb_list,
             output_folder=out,
             tcra_list=tcra_list,
-            mhc_value=args.mhc,
-            tcell_type_value=args.tcell_type,
         )
         print(f"[ERGO-II_ext] Generated {n} files in {out}")
 
