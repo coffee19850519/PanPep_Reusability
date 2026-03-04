@@ -10,6 +10,11 @@ This epository contains the code associated with our reusability study upon the 
 Our evaluations first examined PanPep’s inference- and training-level reproducibility using both the original dataset and a newly curated independent dataset. We then assessed its extendibility to peptide-TCRα and peptide-TCRαβ binding recognition, applying the same source code to these new task datasets.
 ![Fig1](https://github.com/coffee19850519/PanPep_Reusability/blob/main/img/Fig1.jpg)
 
+## Documentation
+
+- [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
+- [Other Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+
 ## Installation
 Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/tree/main?tab=readme-ov-file#requirements).
 
@@ -20,6 +25,8 @@ Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/
 The training pipeline is located in `./train/` with the main entry point at [`train.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/train/train.py).
 
 ## CASE 1: Inference Reproducibility with Original Dataset
+
+> Full documentation: [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md)
 
 ### Data Requirements
 - **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Eoxmw-A2SktDnWKYFDg42TkBmrZP7wOBg1g95kY3nQYPYg?e=vKrGpt)
@@ -58,8 +65,13 @@ python inference_meta_learner.py \
 **Few-shot** and **Majority** modes include an additional `--kshot_dir` parameter for storing selected fine-tuning samples. Use this parameter to specify a fixed set of fine-tuning samples.
 
 In **Majority** mode, the `--k_shot` parameter represents a ratio rather than an absolute count of samples.
+## Other Methods
+
+> Full documentation: [Other Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ## Metrics Calculation
+
+> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 
 The evaluation metrics pipeline is located in `./metric calculation/` and supports both classification and ranking metrics.
 
@@ -103,6 +115,8 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 
 ## CASE 2: Inference Reproducibility with Independent Dataset
 
+> Full documentation: [CASE2.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE2.md)
+
 ### Data Requirements
 
 - **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Em3lIjtz-fxOnnz64yzprsoBNVrEvjkbzrBlK4Pa6-FWwg?e=moZ7cg)
@@ -114,6 +128,8 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 ### Usage
 Use the same inference modes and metrics calculation pipeline as described in [CASE 1](#case-1-inference-reproducibility-with-original-dataset).
 ## CASE 3: Training Reproducibility with TCRβ Extension
+
+> Full documentation: [CASE3.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE3.md)
 
 ### Data Requirements
 
@@ -127,6 +143,8 @@ Use the same inference modes and metrics calculation pipeline as described in [C
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
 ## CASE 4: Training Reproducibility with TCRα Extension
 
+> Full documentation: [CASE4.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE4.md)
+
 ### Data Requirements
 
 - **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
@@ -138,6 +156,8 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
 ## CASE 5: Training Reproducibility with TCRαβ Extension
+
+> Full documentation: [CASE5.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE5.md)
 
 ### Data Requirements
 
