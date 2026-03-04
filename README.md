@@ -67,7 +67,7 @@ python inference_meta_learner.py \
 In **Majority** mode, the `--k_shot` parameter represents a ratio rather than an absolute count of samples.
 ### Baseline Methods
 
-> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> DLpTCR\|ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ### Metrics Calculation
 
@@ -278,7 +278,7 @@ python inferece_ab.py \
 ---
 
 ## Data Download
-The data used in this study is publicly available on [Zenodo](https://doi.org/10.5281/zenodo.16943691).
+The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.16943691).
 
 ## Original Study
 
