@@ -4,3 +4,9 @@
 [submodule "inference/ERGO-II"]
 	path = inference/ERGO-II
 	url = https://github.com/IdoSpringer/ERGO-II.git
+[submodule "inference/UnifyImmun"]
+	path = inference/UnifyImmun
+	url = https://github.com/hliulab/UnifyImmun.git
+[submodule "inference/DLpTCR"]
+	path = inference/DLpTCR
+	url = https://github.com/JiangBioLab/DLpTCR.git

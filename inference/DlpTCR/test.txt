@@ -1,2 +1,0 @@
-cd DlpTCR
-python ./code/API.py --input_file /path/test.csv --sample_size 2  --batch_size 2
