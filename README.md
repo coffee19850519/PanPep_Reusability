@@ -67,7 +67,7 @@ python inference_meta_learner.py \
 In **Majority** mode, the `--k_shot` parameter represents a ratio rather than an absolute count of samples.
 ### Baseline Methods
 
-> DLpTCR\|ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> DLpTCR \| ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ### Metrics Calculation
 
@@ -131,7 +131,7 @@ Use the same inference modes and metrics calculation pipeline as described in [C
 
 ### Baseline Methods
 
-> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> DLpTCR \| ERGO-II \| UnifyImmun \| UniPMT \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ### Metrics Calculation
 
@@ -154,7 +154,7 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Baseline Methods
 
-> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> DLpTCR \| ERGO-II \| UnifyImmun \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ### Metrics Calculation
 
@@ -181,7 +181,7 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Metrics Calculation
 
-> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
+> DLpTCR: see [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 
 ## CASE 5: Training Reproducibility with TCRαβ Extension
 
@@ -261,7 +261,7 @@ python inferece_ab.py \
 
 ### Baseline Methods
 
-> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> DLpTCR \| ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ### Metrics Calculation
 
