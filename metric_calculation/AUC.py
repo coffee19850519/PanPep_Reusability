@@ -11,8 +11,8 @@ def calculate_metrics(csv_path):
     """Calculate ROC-AUC and PR-AUC for a single CSV file"""
     try:
         df = pd.read_csv(csv_path)
-        y_true = df['label'].values
-        y_scores = df['score'].values
+        y_true = df['Label'].values
+        y_scores = df['Score'].values
         
         # Check if there are enough positive and negative samples
         if len(np.unique(y_true)) != 2:

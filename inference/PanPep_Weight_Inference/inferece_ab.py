@@ -13,6 +13,8 @@ from Requirements.Memory_meta_test import Memory_module
 # The parameters of input
 argparser = argparse.ArgumentParser()
 argparser.add_argument('--learning_setting', type=str, help='choosing the learning setting: few-shot, zero-shot,Meta-learner and majority',required=True)
+argparser.add_argument('--meta_type', type=str, default=None, choices=['zero-shot', 'majority', 'few-shot'],
+                        help='When --learning_setting is Meta-learner, specify the meta type to determine score weights')
 argparser.add_argument('--input_dir', type=str, help='the directory containing input CSV files',required=True)
 argparser.add_argument('--output_dir', type=str, help='the directory to save output CSV files',required=True)
 argparser.add_argument('--update_lr', type=float, help='task-level inner update learning rate', default=0.01)
@@ -24,12 +26,18 @@ argparser.add_argument('--fold', type=int, help='which fold to use (1-10)', requ
 argparser.add_argument('--save_alpha_dir', type=str, default='alpha_all', help='directory to save finetuned alpha model (majority)')
 argparser.add_argument('--save_beta_dir', type=str, default='beta_all', help='directory to save finetuned beta model (majority)')
 argparser.add_argument('--peptide_encoding', type=str,
-                        default='/public/home/wxy/Panpep1/encoding/peptide_ab.npz',
+                        default='./peptide_ab.npz',
                         help='Path to peptide encoding file')
 argparser.add_argument('--tcr_encoding', type=str,
-                        default='/public/home/wxy/Panpep1/encoding/tcr_ab.npz',
+                        default='./tcr_ab.npz',
                         help='Path to TCR encoding file')
 args = argparser.parse_args()
+
+SCORE_WEIGHTS = {
+    "zero-shot": (0.86, 0.14),
+    "majority":  (0.59, 0.41),
+    "few-shot":  (0.00, 1.00),
+}
 
 # Load the Atchley_factors for encoding the amino acid
 aa_dict = joblib.load("./Requirements/dic_Atchley_factors.pkl")
@@ -117,13 +125,13 @@ def zero_task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_
 def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=None):
     """
     Parameters:
-        param pep: peptide序列
-        param tcr_data: TCR及其标签列表
-        param peptide_encoding_dict: 预计算的peptide编码字典 {peptide序列: 编码tensor}
-        param tcr_encoding_dict: 预计算的TCR编码字典 {TCR序列: 编码tensor}
+        param pep: peptide sequence
+        param tcr_data: TCR list and corresponding labels
+        param peptide_encoding_dict: precomputed peptide encoding dictionary {peptide sequence: encoded tensor}
+        param tcr_encoding_dict: precomputed TCR encoding dictionary {TCR sequence: encoded tensor}
     Returns:
-        返回peptide embedding，support set embedding，support set labels和query set embedding
-        如果support set为空，对应的support_x和support_y返回None
+        Returns peptide embedding, support set embedding, support set labels, and query set embedding.
+        If support set is empty, support_x and support_y are returned as None.
     """
     spt_TCRs = tcr_data[0]
     ypt = tcr_data[1]
@@ -135,17 +143,17 @@ def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=
         qry_TCRs = ['None']
     query_x = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
 
-    # 从peptide字典获取或计算peptide编码
+    # Get peptide encoding from the dictionary or compute it.
     if peptide_encoding_dict and pep in peptide_encoding_dict:
         peptide_embedding = peptide_encoding_dict[pep]
     else:
         peptide_embedding = add_position_encoding(aamapping(pep, 15))
 
-    # 检查support set是否为空
+    # Check whether the support set is empty.
     if not spt_TCRs or not ypt:
         peptides[0] = peptide_embedding.flatten()
         
-        # 处理query set
+        # Process query set.
         if len(tcr_data) > 2:
             tcr_embeddings = []
             for tcr in qry_TCRs:
@@ -164,11 +172,11 @@ def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=
             
         return peptides, None, None, query_x
 
-    # 如果support set不为空，继续处理
+    # Continue only if the support set is not empty.
     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
     support_y = np.zeros((1, len(ypt)), dtype=np.int64)
     
-    # 处理support set
+    # Process support set.
     temp = []
     for tcr in spt_TCRs:
         if tcr_encoding_dict and tcr in tcr_encoding_dict:
@@ -181,7 +189,7 @@ def task_embedding(pep, tcr_data, peptide_encoding_dict=None, tcr_encoding_dict=
     support_y[0] = np.array(ypt)
     peptides[0] = peptide_embedding.flatten()
 
-    # 处理query set
+    # Process query set.
     if len(tcr_data) > 2:
         tcr_embeddings = []
         for tcr in qry_TCRs:
@@ -389,9 +397,10 @@ def process_file(input_file, output_file, learning_setting):
                 
                 torch.cuda.empty_cache()
         
-        # Calculate average scores
-        avg_scores = [(a + b) / 2 for a, b in zip(ends_alpha, ends_beta)]
-        
+        # Calculate weighted scores
+        w_alpha, w_beta = SCORE_WEIGHTS[args.learning_setting]
+        avg_scores = [w_alpha * a + w_beta * b for a, b in zip(ends_alpha, ends_beta)]
+
         # Get the original labels for the output
         output_labels = [original_labels[idx] for idx in output_indices]
         
@@ -466,12 +475,13 @@ def process_file(input_file, output_file, learning_setting):
                 output_alpha_tcrs += Z_data_alpha[i][2]
                 output_beta_tcrs += Z_data_beta[i][2]
                 output_indices += Z_data_alpha[i][3]
-                
+
                 torch.cuda.empty_cache()
-        
-        # Calculate average scores
-        avg_scores = [(a + b) / 2 for a, b in zip(starts_alpha, starts_beta)]
-        
+
+        # Calculate weighted scores
+        w_alpha, w_beta = SCORE_WEIGHTS[args.learning_setting]
+        avg_scores = [w_alpha * a + w_beta * b for a, b in zip(starts_alpha, starts_beta)]
+
         # Get the original labels for the output
         output_labels = [original_labels[idx] for idx in output_indices]
         
@@ -588,7 +598,8 @@ def process_file(input_file, output_file, learning_setting):
 
             torch.cuda.empty_cache()
 
-        avg_scores = [(a + b) / 2 for a, b in zip(starts_alpha, starts_beta)]
+        w_alpha, w_beta = SCORE_WEIGHTS[args.learning_setting]
+        avg_scores = [w_alpha * a + w_beta * b for a, b in zip(starts_alpha, starts_beta)]
         output_labels = [labels[idx] for idx in output_indices]
         output = pd.DataFrame({
             'Epitope': output_peps,
@@ -654,8 +665,9 @@ def process_file(input_file, output_file, learning_setting):
                 torch.cuda.empty_cache()
         print(starts_alpha)
         print(starts_beta)
-        # Calculate average scores
-        avg_scores = [(a + b) / 2 for a, b in zip(starts_alpha, starts_beta)]
+        # Calculate weighted scores (meta_type determines which weight set to use)
+        w_alpha, w_beta = SCORE_WEIGHTS[args.meta_type]
+        avg_scores = [w_alpha * a + w_beta * b for a, b in zip(starts_alpha, starts_beta)]
         
         # Get the original labels for the output
         output_labels = [original_labels[idx] for idx in output_indices]

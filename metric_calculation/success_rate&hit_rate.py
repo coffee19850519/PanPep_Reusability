@@ -22,7 +22,7 @@ logging.basicConfig(
 class ProcessingConfig:
     """Configuration class for processing"""
     root_dir: str  # Root directory path
-    top_k: int  # Top-k value for calculation
+    top_k_ratio: float  # Top-k ratio (0-1)
     batch_size: int  # Batch size
     num_gpus: int  # Number of GPUs
     output_file: str  # Output file name
@@ -38,17 +38,16 @@ class FileProcessor:
     def setup_device(self, gpu_id: int):
         """Set up the computation device"""
         self.config.gpu_id = gpu_id  # Set GPU ID
-        if gpu_id >= 0:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
-            self.device = torch.device('cuda:0')
+        if gpu_id >= 0 and torch.cuda.is_available():
+            self.device = torch.device(f'cuda:{gpu_id}')
+            torch.cuda.set_device(gpu_id)
         else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = ""
             self.device = torch.device('cpu')
         
         logging.info(f"Process {os.getpid()} using device: {self.device}")
 
-    def process_file(self, file_path: Path) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray]]:
-        """Process a single file"""
+    def process_file(self, file_path: Path) -> Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, int]]:
+        """Process a single file - returns (success_rates, hit_rates, counts, total_length)"""
         try:
             # Check file validity
             if not file_path.exists():
@@ -81,15 +80,20 @@ class FileProcessor:
                 logging.warning(f"Unsupported file type: {file_path.suffix}")
                 return None
 
-            labels = torch.tensor(df['Label'].values, dtype=torch.int8, device=self.device)
-            total_hits = int(torch.sum(labels).item())
+            Labels = torch.tensor(df['Label'].values, dtype=torch.int8, device=self.device)
+            total_hits = int(torch.sum(Labels).item())
 
             if total_hits == 0:
                 return None
 
+            # Calculate actual top_k based on ratio
+            total_length = len(Labels)
+            actual_top_k = int(total_length * self.config.top_k_ratio)
+            actual_top_k = max(1, actual_top_k)  # At least 1
+            
             # Compute metrics
-            chunk_size = min(len(labels), self.config.top_k)
-            cum_hits = torch.cumsum(labels[:chunk_size], dim=0)
+            chunk_size = min(total_length, actual_top_k)
+            cum_hits = torch.cumsum(Labels[:chunk_size], dim=0)
             
             success_rates = cum_hits.float() / float(total_hits)
             positions = torch.arange(1, chunk_size + 1, dtype=torch.float32, device=self.device)
@@ -98,7 +102,8 @@ class FileProcessor:
             return (
                 success_rates.cpu().numpy(),
                 hit_rates.cpu().numpy(),
-                np.ones(chunk_size, dtype=np.int32)
+                np.ones(chunk_size, dtype=np.int32),
+                total_length  # Return total length for reference
             )
 
         except Exception as e:
@@ -106,16 +111,16 @@ class FileProcessor:
             return None
 
         finally:
-            if hasattr(self, 'device') and self.device.type == 'cuda':
+            if hasattr(self, 'device') and self.device is not None and self.device.type == 'cuda':
                 torch.cuda.empty_cache()
             gc.collect()
 
-    def process_files_concurrently(self, file_paths: List[Path]) -> List[Optional[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
+    def process_files_concurrently(self, file_paths: List[Path]) -> List[Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, int]]]:
         """Process files concurrently using threading (shared GPU context)"""
         from concurrent.futures import ThreadPoolExecutor
         import math
         
-        num_workers =  4
+        num_workers = 4
         chunk_size = math.ceil(len(file_paths) / num_workers)
         
         results = []
@@ -129,7 +134,7 @@ class FileProcessor:
                 results.extend(future.result())
         return results
 
-    def _process_chunk(self, chunk: List[Path]) -> List[Optional[Tuple[np.ndarray, np.ndarray, np.ndarray]]]:
+    def _process_chunk(self, chunk: List[Path]) -> List[Optional[Tuple[np.ndarray, np.ndarray, np.ndarray, int]]]:
         """Process a chunk of files"""
         return [self.process_file(fp) for fp in chunk]
 
@@ -142,20 +147,27 @@ class FileProcessor:
             if not file_list:
                 return None
 
-            # Process files concurrently
-            processor = FileProcessor(self.config)
-            processor.setup_device(self.config.gpu_id)
-
-            results = processor.process_files_concurrently(file_list)
+            # Process files concurrently (use self directly, no need to create new instance)
+            results = self.process_files_concurrently(file_list)
+            
+            # Find maximum chunk size for initialization
+            max_chunk_size = 0
+            for result in results:
+                if result:
+                    s_rates, h_rates, cnt, total_len = result
+                    max_chunk_size = max(max_chunk_size, len(s_rates))
+            
+            if max_chunk_size == 0:
+                return None
             
             # Aggregate results
-            sum_success = np.zeros(self.config.top_k, dtype=np.float32)
-            sum_hit = np.zeros(self.config.top_k, dtype=np.float32)
-            counts = np.zeros(self.config.top_k, dtype=np.int32)
+            sum_success = np.zeros(max_chunk_size, dtype=np.float32)
+            sum_hit = np.zeros(max_chunk_size, dtype=np.float32)
+            counts = np.zeros(max_chunk_size, dtype=np.int32)
 
             for result in results:
                 if result:
-                    s_rates, h_rates, cnt = result
+                    s_rates, h_rates, cnt, total_len = result
                     length = len(s_rates)
                     sum_success[:length] += s_rates
                     sum_hit[:length] += h_rates
@@ -252,12 +264,14 @@ class DirectoryProcessor:
     def _save_final_results(self, results: List[pd.DataFrame]):
         """Save final results"""
         if not results:
-             logging.warning("No results to save.")
-             return
+            logging.warning("No results to save.")
+            return
         logging.info(f"Combining {len(results)} DataFrames...")
         final_df = pd.concat(results, ignore_index=True)
         
         output_dir = Path(self.config.output_dir) if self.config.output_dir else Path.cwd()
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
         csv_path = output_dir / f"{self.config.output_file}.csv"
         parquet_path = output_dir / f"{self.config.output_file}.parquet"
 
@@ -272,15 +286,20 @@ def main():
     import argparse
     parser = argparse.ArgumentParser(description='Compute average hit rate of directories')
     parser.add_argument('--root_dir', required=True, help='Root directory path')
-    parser.add_argument('--top_k', type=int, default=11419896, help='Maximum top-k value to calculate')
+    parser.add_argument('--top_k_ratio', type=float, default=1, 
+                        help='Top-k ratio to calculate (0-1, e.g., 0.1 for top 10%%)')
     parser.add_argument('--batch_size', type=int, default=150, help='Batch size')
     parser.add_argument('--output', default='results', help='Output file name (without extension)')
     parser.add_argument('--output_dir', help='Output directory')
     args = parser.parse_args()
 
+    # Validate ratio range
+    if not 0 < args.top_k_ratio <= 1:
+        raise ValueError("top_k_ratio must be between 0 and 1 (exclusive of 0, inclusive of 1)")
+
     config = ProcessingConfig(
         root_dir=args.root_dir,
-        top_k=args.top_k,
+        top_k_ratio=args.top_k_ratio,
         batch_size=args.batch_size,
         num_gpus=torch.cuda.device_count() if torch.cuda.is_available() else 0, 
         output_file=args.output,
@@ -291,6 +310,8 @@ def main():
 
     if config.num_gpus == 0:
         logging.warning("No CUDA GPU detected or GPU usage not requested. Running on CPU.")
+    else:
+        logging.info(f"Detected {config.num_gpus} GPU(s)")
 
     processor = DirectoryProcessor(config)
     processor.process_all()

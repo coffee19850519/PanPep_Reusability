@@ -75,7 +75,8 @@ def get_peptide_tcr(src_csv: FilePath, PepColumnName: str = 'Peptide', CdrColume
 
 def add_negative_data(positive_data, negative_data, ratio=1):
     '''
-    将正、负样本加入新的csv中（个数与正样本一致）
+    Add positive and negative samples into a new CSV
+    (negative sample count matches positive sample count).
     Args:
         positive_data:
         negative_data:
@@ -304,10 +305,10 @@ def add_position_encoding(seq):
 #             for tcr in qry_TCRs
 #         ])
         
-#         # 扩展peptide_embedding以匹配batch size
+#         # Expand peptide_embedding to match batch size
 #         peptide_expanded = peptide_embedding.unsqueeze(0).expand(len(qry_TCRs), -1, -1)
         
-#         # 一次性连接所有数据
+#         # Concatenate all data at once
 #         temp = torch.cat([peptide_expanded, tcr_embeddings], dim=1)
 #         query_x[0] = temp
 #     else:
@@ -316,18 +317,19 @@ def add_position_encoding(seq):
 
 def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encoding_dict=None):
     """
-    从预计算的字典中获取task-level embedding，如果字典不存在则实时计算
+    Get task-level embeddings from precomputed dictionaries.
+    If a dictionary entry is missing, compute the embedding on the fly.
 
     Parameters:
-        param pep: peptide序列
-        param tcr_data: TCR及其标签列表
-        param aa_dict: 氨基酸编码字典
-        param peptide_encoding_dict: 预计算的peptide编码字典 {peptide序列: 编码tensor}
-        param tcr_encoding_dict: 预计算的TCR编码字典 {TCR序列: 编码tensor}
+        param pep: peptide sequence
+        param tcr_data: TCR list and corresponding labels
+        param aa_dict: amino-acid encoding dictionary
+        param peptide_encoding_dict: precomputed peptide encoding dictionary {peptide sequence: encoded tensor}
+        param tcr_encoding_dict: precomputed TCR encoding dictionary {TCR sequence: encoded tensor}
 
     Returns:
-        返回peptide embedding，support set embedding，support set labels和query set embedding
-        如果support set为空，对应的support_x和support_y返回None
+        Returns peptide embedding, support set embedding, support set labels, and query set embedding.
+        If support set is empty, support_x and support_y are returned as None.
     """
     spt_TCRs = tcr_data[0]
     ypt = tcr_data[1]
@@ -341,17 +343,17 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
         qry_TCRs = ['None']
     query_x = torch.FloatTensor(1, len(qry_TCRs), 25 + 15, 5)
 
-    # 从peptide字典获取或计算peptide编码
+    # Get peptide encoding from the dictionary or compute it.
     if peptide_encoding_dict and pep in peptide_encoding_dict:
         peptide_embedding = peptide_encoding_dict[pep]
     else:
         peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
 
-    # 检查support set是否为空
+    # Check whether the support set is empty.
     if not spt_TCRs or not ypt:
         peptides[0] = peptide_embedding.flatten()
         
-        # 处理query set
+        # Process query set.
         if len(tcr_data) > 2:
             tcr_embeddings = []
             for tcr in qry_TCRs:
@@ -370,11 +372,11 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
             
         return peptides, None, None, query_x
 
-    # 如果support set不为空，继续处理
+    # Continue only if the support set is not empty.
     support_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
     support_y = np.zeros((1, len(ypt)), dtype=np.int64)
     
-    # 处理support set
+    # Process support set.
     temp = []
     for tcr in spt_TCRs:
         if tcr_encoding_dict and tcr in tcr_encoding_dict:
@@ -387,7 +389,7 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
     support_y[0] = np.array(ypt)
     peptides[0] = peptide_embedding.flatten()
 
-    # 处理query set
+    # Process query set.
     if len(tcr_data) > 2:
         tcr_embeddings = []
         for tcr in qry_TCRs:
@@ -406,7 +408,7 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
 
     return peptides, support_x, torch.LongTensor(support_y), query_x
 
-# ##优化，difference
+# ## Optimization, difference
 # def get_query_data(all_ranking_data, k_shot_data, k_shot):
 
 #     F_data = [[], []]
@@ -420,7 +422,7 @@ def task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encod
 def get_query_data(all_ranking_data, k_shot_data, k_shot):
     mask = ~np.isin(all_ranking_data[0], k_shot_data[0])
     
-    # 直接用掩码选择元素
+    # Select elements directly with a mask.
     F_data = [
         np.array(all_ranking_data[0])[mask].tolist(),
         np.array(all_ranking_data[1])[mask].tolist()
@@ -484,7 +486,7 @@ def save_kshot_data_more_data(all_ranking_data, k_shot, pep, result,update_step_
         data[0].append(all_ranking_data[0][idx])
         data[1].append(1)
     
-    # 添加所有选择的负样本
+    # Add all selected negative samples.
     for idx in negative_support_idx:
         data[0].append(all_ranking_data[0][idx])
         data[1].append(0)
@@ -612,14 +614,14 @@ def get_query_data_multi_round(all_ranking_data, all_support_tcrs):
     return F_data
 def save_support_data(all_ranking_data, k_shot, pep, result, chain_type=None):
     """
-    保存k-shot数据，如果提供了chain_type，文件名中会包含该信息
+    Save k-shot data. If chain_type is provided, include it in the filename.
     
-    参数:
-        all_ranking_data: 包含TCR序列和标签的数据
-        k_shot: 每类样本的数量
-        pep: 肽段名称
-        result: 结果保存路径
-        chain_type: 可选参数，指定链类型（alpha或beta）
+    Args:
+        all_ranking_data: data containing TCR sequences and labels
+        k_shot: number of samples per class
+        pep: peptide name
+        result: output path
+        chain_type: optional chain type (alpha or beta)
     """
     data = [[], []]
 
@@ -659,30 +661,31 @@ def read_kshot_data(all_ranking_data, k_shot, pep, result):
 
 def zero_task_embedding(pep, tcr_data, aa_dict, peptide_encoding_dict=None, tcr_encoding_dict=None):
     """
-    从预计算的字典中获取zero-shot的task-level embedding，如果字典不存在则实时计算
+    Get zero-shot task-level embeddings from precomputed dictionaries.
+    If a dictionary entry is missing, compute the embedding on the fly.
 
     Parameters:
-        param pep: peptide序列
-        param tcr_data: TCR列表
-        param aa_dict: 氨基酸编码字典
-        param peptide_encoding_dict: 预计算的peptide编码字典 {peptide序列: 编码tensor}
-        param tcr_encoding_dict: 预计算的TCR编码字典 {TCR序列: 编码tensor}
+        param pep: peptide sequence
+        param tcr_data: TCR list
+        param aa_dict: amino-acid encoding dictionary
+        param peptide_encoding_dict: precomputed peptide encoding dictionary {peptide sequence: encoded tensor}
+        param tcr_encoding_dict: precomputed TCR encoding dictionary {TCR sequence: encoded tensor}
 
     Returns:
-        返回peptide embedding和query TCRs的embedding
+        Returns peptide embedding and query TCR embeddings.
     """
     spt_TCRs = tcr_data
     query_x = torch.FloatTensor(1, len(spt_TCRs), 25 + 15, 5)
     peptides = torch.FloatTensor(1, 75)
     qry_TCRs = tcr_data[2] if len(tcr_data) > 2 else ['None']
-    # 从peptide字典获取或计算peptide编码
+    # Get peptide encoding from the dictionary or compute it.
     if peptide_encoding_dict and pep in peptide_encoding_dict:
         peptide_embedding = peptide_encoding_dict[pep]
         qry_TCRs = list(dict.fromkeys(qry_TCRs))
     else:
         peptide_embedding = add_position_encoding(aamapping(pep, 15, aa_dict))
     
-    # 处理query TCRs
+    # Process query TCRs.
     temp = torch.cat([
         torch.cat([
             peptide_embedding,
@@ -718,10 +721,10 @@ class RemovableHandle(object):
 
 def get_train_data(peptide, *args, **kwargs):
     """
-    返回所有在meta-training训练阶段用到的 peptide-TCR , 格式为：
-            键为: peptide
-            值为: k_shot 个 positive TCR, k_query 个 positive TCR;
-                 k_shot 个 negative TCR, k_query 个 negative TCR
+    Return all peptide-TCR pairs used in the meta-training phase, in the format:
+            key: peptide
+            value: k_shot positive TCRs, k_query positive TCRs;
+                   k_shot negative TCRs, k_query negative TCRs
     Args:
         peptide:
         *args:
@@ -749,7 +752,7 @@ def get_train_data(peptide, *args, **kwargs):
 
 def merge_dict(*dicts):
     '''
-    合并字典并去重
+    Merge dictionaries and remove duplicates.
     :param dicts:
     :return:
     '''
@@ -774,7 +777,7 @@ def merge_all_TCR(pep_tcr: dict, new_dict: dict):
 
 def generate_selected_idx(n, generator=None):
     """
-    随机生成长度为n的tensor列表（内部是0到n-1数字的乱序），返回一个生成器
+    Randomly generate a length-n tensor permutation (values 0 to n-1) and return it as a generator.
     Args:
         n:
         generator:
@@ -826,7 +829,10 @@ def load_multi_round_support_data(pep, support_dir):
     
 def return_m_from_n(m, n=None, generate_idx=None):
     """
-    从长度为n的生成器中返回m项 (n未指定时，生成器不��空；生成器未指定时，n不能为空) (且m<=n)
+    Return m items from a length-n generator.
+    If n is not provided, generate_idx must be provided.
+    If generate_idx is not provided, n must be provided.
+    Also requires m <= n.
     Args:
         m:
         n:
@@ -856,7 +862,7 @@ Model_config = [
     ('flatten', []),
     ('linear', [2, 608])
 ]
-Model_config_large = [
+Model_config_large_128 = [
     ('self_attention', [[1,  128,  5],[1,  128,  5], [1,  128,  5]]),
     ('linear', [128, 128]),
     ('relu', [True]),
@@ -869,6 +875,18 @@ Model_config_large = [
 ]
 Model_config_attention8= [
     ('self_attention', [[8, 5, 5], [8, 5, 5], [8, 5, 5]]),
+    ('linear', [5, 5]),
+    ('relu', [True]),
+    ('conv2d', [16, 1, 2, 1, 1, 0]),
+    ('relu', [True]),
+    ('bn', [16]),
+    ('max_pool2d', [2, 2, 0]),
+    ('flatten', []),
+    ('linear', [2, 608])
+]
+
+Model_config_attention16= [
+    ('self_attention', [[16, 5, 5], [16, 5, 5], [16, 5, 5]]),
     ('linear', [5, 5]),
     ('relu', [True]),
     ('conv2d', [16, 1, 2, 1, 1, 0]),
@@ -925,18 +943,6 @@ Model_config_conv_stack3 = [
     ('linear', [2, 640])
 ]
 
-
-Model_config_multi_head_attention5_conv3 = [
-    ('res_multi_head_attention_block', [[5, 5, 5, 5], [5, 5, 5, 5], [5, 5, 5, 5],[5, 5, 5, 5],[5, 5, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 640])
-]
-
 Model_config_attention5_conv3_large = [
     ('res_attention_block', [[8, 16, 5], [8, 16,16], [8, 16, 16],[8, 16,16],[8, 16, 16]]), 
     ('linear', [16, 16]),
@@ -946,18 +952,6 @@ Model_config_attention5_conv3_large = [
     ('max_pool2d', [2, 2, 0]),
     ('flatten', []),
     ('linear', [2, 2560])
-]
-
-
-Model_config_attention5_conv3 = [
-    ('res_attention_block', [[8, 5, 5], [8, 5, 5], [8, 5, 5],[8, 5, 5],[8, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 640])
 ]
 
 Model_config_conv_stack6 = [
@@ -971,52 +965,6 @@ Model_config_conv_stack6 = [
     ('linear', [2, 640])
 ]
 
-Model_config_conv_stack8 = [
-    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 640])
-]
-
-Model_config_conv_stack12 = [
-    ('self_attention', [[1, 5, 5], [1, 5, 5], [1, 5, 5]]),
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('res_block', [[16, 1, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1], [16, 16, 3, 1, 1]]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 640])
-]
-
-Model_config_attention_stack10 = [
-    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
-Model_config_attention16 = [
-    ('self_attention', [[16, 5, 5], [16, 5, 5], [16, 5, 5]]),
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
 Model_config_attention_stack8 = [
     ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
     ('linear', [5, 5]),
@@ -1028,160 +976,6 @@ Model_config_attention_stack8 = [
     ('flatten', []),
     ('linear', [2, 608])
 ]
-
-Model_config_attention_stack9 = [
-    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
-Model_config_attention_stack12 = [
-    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5], [1, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
-Model_config_attention_stack7 = [
-    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5], [1, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
-Model_config_attention_stack6 = [
-    ('res_attention_block', [[1, 5, 5], [1, 5, 5], [1, 5, 5],[1, 5, 5],[1, 5, 5],[1, 5, 5]]), 
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-
-
-Model_config_attention24 = [
-    ('self_attention', [[24, 5, 5], [24, 5, 5], [24, 5, 5]]),
-    ('linear', [5, 5]),
-    ('relu', [True]),
-    ('conv2d', [16, 1, 2, 1, 1, 0]),
-    ('relu', [True]),
-    ('bn', [16]),
-    ('max_pool2d', [2, 2, 0]),
-    ('flatten', []),
-    ('linear', [2, 608])
-]
-# Model_config = [
-# ('self_attention', [[2, 5, 5], [2, 5, 5], [2, 5, 5]]),
-# ('linear', [32, 5]),
-# ('relu', [True]),
-# ('conv2d', [32, 1, 2, 1, 1, 0]),
-# ('relu', [True]),
-# ('bn', [32]),
-# ('max_pool2d', [2, 2, 0]),
-# ('flatten', []),
-# ('linear', [2, 9728])]
-# # Modified architecture
-# 1:
-# Model_config = [
-# ('self_attention', [[2, 5, 5], [2, 5, 5], [2, 5, 5]]),
-# ('linear', [32, 5]),
-# ('relu', [True]),
-# ('conv2d', [32, 1, 2, 1, 1, 0]),
-# ('relu', [True]),
-# ('bn', [32]),
-# ('max_pool2d', [2, 2, 0]),
-# ('flatten', []),
-# ('linear', [2, 39936])]
-# 2:
-# Model_config = [
-# ('self_attention', [[8, 5, 5], [8, 5, 5], [8, 5, 5]]),
-# ('linear', [48, 5]),
-# ('relu', [True]),
-# ('conv2d', [48, 1, 2, 1, 1, 0]),
-# ('relu', [True]),
-# ('bn', [48]),
-# ('max_pool2d', [2, 2, 0]),
-# ('flatten', []),
-# ('linear', [2, 89856])]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Model_config = [
-#     ('self_attention', [[3, 5, 5], [3, 5, 5], [3, 5, 5]]),
-#     ('linear', [48, 5]),
-#     ('relu', [True]),
-#     ('conv2d', [48, 1, 2, 1, 1, 0]),
-#     ('relu', [True]),
-#     ('bn', [48]),
-#     ('max_pool2d', [1, 1, 0]),
-#     ('flatten', []),
-#     ('linear', [2, 89856])
-# ]
-# Model_config = [
-#     ('self_attention', [[2, 5, 5], [2, 5, 5], [2, 5, 5]]),  # 6-10
-#     ('linear', [5, 5]),
-#     ('relu', [True]),
-#     ('conv2d', [32, 1, 2, 1, 1, 0]),
-#     ('relu', [True]),
-#     ('bn', [32]),
-#     # ('max_pool2d', [1, 1, 0]),
-#     ('flatten', []),
-#     ('linear', [2, 6240])
-# ]
-# Model_config = [
-#     ('self_attention', [[2, 5, 5], [2, 5, 5], [2, 5, 5]]),
-#     ('linear', [32, 5]),
-#     ('relu', [True]),
-#     ('conv2d', [32, 1, 2, 1, 1, 0]),
-#     ('relu', [True]),
-#     ('bn', [32]),
-#     # ('max_pool2d', [1, 1, 0]),
-#     ('flatten', []),
-#     ('linear', [2, 39936])
-# ]
-# Model_config = [
-#     ('self_attention', [[8, 5, 5], [8, 5, 5], [8, 5, 5]]),  # 6-10
-#     ('linear', [5, 5]),
-#     ('relu', [True]),
-#     ('conv2d', [32, 1, 2, 1, 1, 0]),
-#     ('relu', [True]),
-#     ('bn', [32]),
-#     # ('max_pool2d', [1, 1, 0]),
-#     ('flatten', []),
-#     ('linear', [2, 6240])
-# ]
 # load the cofig file
 config_file_path = os.path.join(os.path.dirname(__file__), 'Configs', 'TrainingConfig.yaml')
 Data_config = load_config(config_file_path)

@@ -60,8 +60,8 @@ def train_main(train_data, save_path, logger_file, task_num: int = 166, hook=Non
     # Initialize device and model
     device = torch.device(Device)
     print("Data configuration:", Data_config)
-    print(Support)
-    print(Query)
+    print("Support configuration:",Support)
+    print("Query configuration:",Query)
     # Initialize the meta-learning model
     model = Memory_Meta(args,  Model_config).to(device)
     print("Model configuration:",  Model_config)

@@ -19,30 +19,21 @@ sys.path.append(PROJECT_ROOT)
 
 from utils import (
     Args, get_model, Model_config, Model_config_attention8, Model_config_attention_stack5,
-    Model_config_conv_stack3, Model_config_multi_head_attention5_conv3, Model_config_attention5_conv3,
+    Model_config_conv_stack3,
     Project_path, Aa_dict, task_embedding,
     load_support_data, get_query_data, save_support_data,
-    sample_multi_round_support_data, load_multi_round_support_data, get_query_data_multi_round,Model_config_large,Model_config_large_16,Model_config_large_32,Model_config_attention5_conv3_large,Model_config_conv_stack6,Model_config_conv_stack8,Model_config_conv_stack12,Model_config_attention_stack10,Model_config_attention16,Model_config_attention24,Model_config_attention_stack6,Model_config_attention_stack7,Model_config_attention_stack8,Model_config_attention_stack9,Model_config_attention_stack12
+    sample_multi_round_support_data, load_multi_round_support_data, get_query_data_multi_round,Model_config_large_128,Model_config_large_16,Model_config_large_32,Model_config_attention5_conv3_large,Model_config_conv_stack6,Model_config_attention16,Model_config_attention_stack8
 )
 
 MODEL_CONFIG_MAP = {
     'default': Model_config,
     'attention8': Model_config_attention8,
     'attention16': Model_config_attention16,
-    'attention24': Model_config_attention24,
     'attention_stack5': Model_config_attention_stack5,
-    'attention_stack10': Model_config_attention_stack10,
-    'attention_stack6': Model_config_attention_stack6,
     'attention_stack8': Model_config_attention_stack8,
-    'attention_stack12': Model_config_attention_stack12,
-    'attention_stack9': Model_config_attention_stack9,
     'conv_stack3':  Model_config_conv_stack3,
     'conv_stack6':  Model_config_conv_stack6,
-    'conv_stack8':  Model_config_conv_stack8,
-    'conv_stack12':  Model_config_conv_stack12,
-    'multi_head_attention5_conv3': Model_config_multi_head_attention5_conv3,
-    'attention5_conv3': Model_config_attention5_conv3,
-    'large': Model_config_large,
+    'large128': Model_config_large_128,
     'large16':Model_config_large_16,
     'large32':Model_config_large_32,
     'attention5_conv3_large':Model_config_attention5_conv3_large,
@@ -55,23 +46,22 @@ def parse_args():
                              '"mixed" uses alternating negative sources with multi-round support.')
     parser.add_argument('--gpu', type=str, default='0', help='GPU device IDs separated by comma (e.g., "0,1,2")')
     parser.add_argument('--model', type=str, default='attention5_conv3_large',
-                        choices=['default', 'attention8', 'attention_stack5', 'conv_stack3',
-                                'multi_head_attention5_conv3', 'attention5_conv3','large','large16','large32','attention5_conv3_large','attention16','attention24','attention_stack10','conv_stack6','conv_stack8','conv_stack12','attention_stack6','attention_stack8','attention_stack9','attention_stack12'],
+                        choices=['default', 'attention8', 'attention_stack5', 'conv_stack3','large128','large16','large32','attention5_conv3_large','attention16','conv_stack6','attention_stack8'],
                         help='Model configuration to use')
     parser.add_argument('--distillation', type=int, default=3, help='Distillation number')
     parser.add_argument('--batch_size', type=int, default=10000, help='Upper limit for batch size')
     parser.add_argument('--support', type=int, default=4, help='K-shot value')
-    parser.add_argument('--test_data', type=str, default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/new_model/peptide_11times_or_more.csv',
+    parser.add_argument('--test_data', type=str, default='./data/test_data.csv',
                         help='Path to test data CSV')
     parser.add_argument('--negative_data', type=str,
-                        default="/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Weight_Inference_attention/Combined_library_sample_0.1pct.txt",
+                        default='./data/Control_dataset.txt',
                         help='Path to negative TCR data (used as query negatives in mixed mode, sole source in single mode) ')
-    parser.add_argument('--negative_data_background', type=str, default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_train/Control_dataset.txt',
+    parser.add_argument('--negative_data_background', type=str, default='./data/Control_dataset.txt',
                         help='[mixed mode only] Path to background negative TCR library (used for support set odd steps)')
-    parser.add_argument('--negative_data_reshuffling', type=str, default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_train/reshuffling.txt',
+    parser.add_argument('--negative_data_reshuffling', type=str, default='./data/reshuffling.txt',
                         help='[mixed mode only] Path to reshuffling negative TCR library (used for support set even steps)')
     parser.add_argument('--model_path', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_train/checkpoint/alternating_s4q',
+                        default='./Requirements',
                         help='Path to model')
     parser.add_argument('--result_dir', type=str,
                         default='result_alternating/few/alternating_s4q6',
@@ -79,10 +69,10 @@ def parse_args():
     parser.add_argument('--support_dir', type=str, default=None,
                         help='Directory containing pre-saved k-shot CSV files. If provided, load from here instead of generating.')
     parser.add_argument('--peptide_encoding', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/peptide_b.npz',
+                        default='./peptide_b.npz',
                         help='Path to peptide encoding file')
     parser.add_argument('--tcr_encoding', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/tcr_b.npz',
+                        default='./tcr_b.npz',
                         help='Path to TCR encoding file')
     parser.add_argument('--update_step_test', type=int, default=3,
                         help='Number of inner-loop finetuning steps during test')
@@ -99,10 +89,6 @@ def load_negative_library(path):
     df = pd.read_csv(path)
     return np.array(df).reshape(1, -1).tolist()[0]
 
-
-# =============================================================================
-# Single mode: one negative source, single-round support
-# =============================================================================
 
 def process_peptide_single(pep, test_data, test_data_tcr_negative, model, aa_dict, args, config, device, result_dir, file_lock, peptide_encoding_dict, tcr_encoding_dict):
     pep_start_time = time.time()
@@ -209,10 +195,6 @@ def process_peptide_single(pep, test_data, test_data_tcr_negative, model, aa_dic
     pep_time = time.time() - pep_start_time
     print(f"\nTotal time for peptide {pep}: {pep_time:.2f}s")
 
-
-# =============================================================================
-# Mixed mode: alternating negative sources, multi-round support
-# =============================================================================
 
 def process_peptide_mixed(pep, test_data, negative_sources, model, aa_dict, args, config, device, result_dir, file_lock, peptide_encoding_dict, tcr_encoding_dict):
     pep_start_time = time.time()
@@ -342,9 +324,6 @@ def process_peptide_mixed(pep, test_data, negative_sources, model, aa_dict, args
     print(f"\nTotal time for peptide {pep}: {pep_time:.2f}s")
 
 
-# =============================================================================
-# Main inference entry point
-# =============================================================================
 
 def few_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
     total_start_time = time.time()

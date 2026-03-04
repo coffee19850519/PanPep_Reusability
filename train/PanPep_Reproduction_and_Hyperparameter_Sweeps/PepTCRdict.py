@@ -38,7 +38,7 @@ class PepTCRdict(Dataset):
         self.k_query = k_query
 
         # set the embedding dimension of each TCR
-        self.encode_dim = encode_dim  # 每一个TCR对应的embedding维度
+        self.encode_dim = encode_dim  # embedding dimension for each TCR
 
         # load the atchley_factor matrix
         self.aa_dict = joblib.load(aa_dict_path)
@@ -258,7 +258,7 @@ class PepTCRdict_old(Dataset):
         self.k_query = k_query
 
         # set the embedding dimension of each TCR
-        self.encode_dim = encode_dim  # 每一个TCR对应的embedding维度
+        self.encode_dim = encode_dim  # embedding dimension for each TCR
 
         # load the atchley_factor matrix
         self.aa_dict = joblib.load(aa_dict_path)
@@ -441,7 +441,7 @@ class PepTCRdict_new(Dataset):
         self.k_query = k_query
 
         # set the embedding dimension of each TCR
-        self.encode_dim = encode_dim  # 每一个TCR对应的embedding维度
+        self.encode_dim = encode_dim  # embedding dimension for each TCR
 
         # load the atchley_factor matrix
         self.aa_dict = joblib.load(aa_dict_path)
@@ -628,7 +628,7 @@ class PepTCRdict_ranking(Dataset):
         self.k_query = k_query
 
         # set the embedding dimension of each TCR
-        self.encode_dim = encode_dim  # 每一个TCR对应的embedding维度
+        self.encode_dim = encode_dim  # embedding dimension for each TCR
 
         # load the atchley_factor matrix
         self.aa_dict = joblib.load(aa_dict_path)
@@ -782,7 +782,7 @@ class PepTCRdict4using_save_data(torch.utils.data.Dataset):
         self.k_shot = k_shot
         # set the number of instances of each class in query set
         self.k_query = k_query
-        self.encode_dim = encode_dim  # 每一个TCR对应的embedding维度
+        self.encode_dim = encode_dim  # embedding dimension for each TCR
 
         # load the atchley_factor matrix
         self.aa_dict = joblib.load(aa_dict_path)
@@ -892,22 +892,22 @@ def accord_epoch_get_few_data(few_data_path, train_pep, epoch, support=2, query=
             if pep in train_pep:
                 num += 1
                 negative_[pep] = [[], []]
-                # 正样本的support集
+                # support set of positive samples
                 pst_spt = few_data[pep][2 * (support + query) * epoch: 2 * (support + query) * epoch + support]
                 negative_[pep][0].extend(pst_spt)
                 negative_[pep][1].extend([1] * len(pst_spt))
-                # 负样本的support集
+                # support set of negative samples
                 ngt_spt = few_data[pep][
                           2 * (support + query) * epoch + (support + query): 2 * (support + query) * epoch + (
                                   support + query) + support]
                 negative_[pep][0].extend(ngt_spt)
                 negative_[pep][1].extend([0] * len(ngt_spt))
-                # 正样本的query集
+                # query set of positive samples
                 pst_query = few_data[pep][
                             2 * (support + query) * epoch + support: 2 * (support + query) * epoch + (support + query)]
                 negative_[pep][0].extend(pst_query)
                 negative_[pep][1].extend([1] * len(pst_query))
-                # 负样本的query集
+                # query set of negative samples
                 ngt_query = few_data[pep][2 * (support + query) * epoch + (support + query) + support: 2 * (
                         support + query) * epoch + 2 * (support + query)]
                 negative_[pep][0].extend(ngt_query)
@@ -916,22 +916,22 @@ def accord_epoch_get_few_data(few_data_path, train_pep, epoch, support=2, query=
             if pep not in train_pep:
                 num += 1
                 negative_[pep] = [[], []]
-                # 正样本的support集
+                # support set of positive samples
                 pst_spt = few_data[pep][2 * (support + query) * epoch: 2 * (support + query) * epoch + support]
                 negative_[pep][0].extend(pst_spt)
                 negative_[pep][1].extend([1] * len(pst_spt))
-                # 负样本的support集
+                # support set of negative samples
                 ngt_spt = few_data[pep][
                           2 * (support + query) * epoch + (support + query): 2 * (support + query) * epoch + (
                                   support + query) + support]
                 negative_[pep][0].extend(ngt_spt)
                 negative_[pep][1].extend([0] * len(ngt_spt))
-                # 正样本的query集
+                # query set of positive samples
                 pst_query = few_data[pep][
                             2 * (support + query) * epoch + support: 2 * (support + query) * epoch + (support + query)]
                 negative_[pep][0].extend(pst_query)
                 negative_[pep][1].extend([1] * len(pst_query))
-                # 负样本的query集
+                # query set of negative samples
                 ngt_query = few_data[pep][2 * (support + query) * epoch + (support + query) + support: 2 * (
                         support + query) * epoch + 2 * (support + query)]
                 negative_[pep][0].extend(ngt_query)

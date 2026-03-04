@@ -18,47 +18,39 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..
 sys.path.append(PROJECT_ROOT)
 
 from utils import (
-    Args, get_model, Model_config, Model_config_attention8, Model_config_attention_stack5,Model_config_multi_head_attention5_conv3 , Project_path, Aa_dict, task_embedding, 
-    load_support_data, get_query_data, save_support_data,Model_config_attention5_conv3,Model_config_attention5_conv3_large
+    Args, get_model, Model_config, Project_path, Aa_dict, task_embedding, 
+    load_support_data, get_query_data, save_support_data
 )
 
 MODEL_CONFIG_MAP = {
     'default': Model_config,
-    'attention8': Model_config_attention8,
-    'attention_stack5': Model_config_attention_stack5,
-    'multi_head_attention5_conv3': Model_config_multi_head_attention5_conv3,
-    'attention5_conv3':Model_config_attention5_conv3,
-    'attention5_conv3_large':Model_config_attention5_conv3_large,
 }
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Test ranking model')
     parser.add_argument('--gpu', type=str, default='0', help='GPU device IDs separated by comma (e.g., "0,1,2")')
-    parser.add_argument('--model', type=str, default='attention5_conv3_large',
-                        choices=['default', 'attention8', 'attention_stack5',
-                                'multi_head_attention5_conv3', 'attention5_conv3','attention5_conv3_large'],
-                        help='Model configuration to use')
+    parser.add_argument('--model', type=str, default='default',choices=['default'],help='Model configuration to use')
     parser.add_argument('--distillation', type=int, default=3, help='Distillation number')
     parser.add_argument('--batch_size', type=int, default=10000, help='Upper limit for batch size')
     parser.add_argument('--support_rate', type=float, default=0.8, help='support rate for positive TCRs')
-    parser.add_argument('--test_data', type=str, default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/data/majority.csv', 
+    parser.add_argument('--test_data', type=str, default='./data/test_data.csv',
                         help='Path to test data CSV')
-    parser.add_argument('--negative_data', type=str, 
-                        default="/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Weight_Inference_attention/Combined_library_sample_0.1pct.txt",
+    parser.add_argument('--negative_data', type=str,
+                        default='./data/Control_dataset.txt',
                         help='Path to negative TCR data')
-    parser.add_argument('--model_path', type=str, 
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Reusability-main222fold10beta/999',
+    parser.add_argument('--model_path', type=str,
+                        default='./Requirements',
                         help='Path to model')
     parser.add_argument('--result_dir', type=str, 
                         default='result11/majority',
                         help='Directory for results')
-    parser.add_argument('--support_dir', type=str, default="/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Weight_Inference/support/majority",
+    parser.add_argument('--support_dir', type=str, default='./support/majority',
                         help='Directory for support data. If not provided, support data will be generated.')
     parser.add_argument('--peptide_encoding', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/peptide_b.npz',
+                        default='./peptide_b.npz',
                         help='Path to peptide encoding file')
     parser.add_argument('--tcr_encoding', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/tcr_b.npz',
+                        default='./tcr_b.npz',
                         help='Path to TCR encoding file')
     return parser.parse_args()
 
@@ -169,9 +161,7 @@ def process_peptide_with_lock(pep, test_data, test_data_tcr_negative, model, aa_
         
         with file_lock:
             try:
-                # 确保目录存在
                 os.makedirs(os.path.dirname(parquet_file_path), exist_ok=True)
-                # 使用gzip压缩写入parquet文件
                 final_output.to_parquet(parquet_file_path, compression='gzip')
                 print(f"Successfully wrote {len(final_output)} records to {parquet_file_path}")
             except Exception as e:
@@ -181,7 +171,7 @@ def process_peptide_with_lock(pep, test_data, test_data_tcr_negative, model, aa_
     print(f"\nPeptide {pep} processing time: {pep_time:.2f}s")
 
 
-def few_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
+def majority_inference(peptide_encoding_dict, tcr_encoding_dict, config):
     total_start_time = time.time()
 
     gpu_ids = [int(gpu_id) for gpu_id in config.gpu.split(',')]
@@ -205,7 +195,6 @@ def few_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
     manager = Manager()
     file_lock = manager.Lock()
 
-    # 获取对应的模型配置
     selected_model_config = MODEL_CONFIG_MAP[config.model]
 
     def process_peptide_batch(gpu_id, peptide_batch, model_config):
@@ -252,4 +241,4 @@ if __name__ == '__main__':
     config = parse_args()
     peptide_encoding_dict = load_encodings(config.peptide_encoding)
     tcr_encoding_dict = load_encodings(config.tcr_encoding)
-    few_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config)
+    majority_inference(peptide_encoding_dict, tcr_encoding_dict, config)

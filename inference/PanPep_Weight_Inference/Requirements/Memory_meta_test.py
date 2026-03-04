@@ -597,12 +597,12 @@ class Memory_Meta(nn.Module):
             return scores
 
     def calculate_query_results(self, query, label, fast_weights):
-        # 最后一次需返回logits_q，所以每次都返回了，但只在最后一次使用了
+        # logits_q must be returned for the last step, so it is returned every step but only used at the end
         logits_q = self.net(query, fast_weights, bn_training=True)
         loss_q = F.cross_entropy(logits_q, label)
         with torch.no_grad():
             pred_q = F.softmax(logits_q, dim=1).argmax(dim=1)
-            correct = torch.eq(pred_q, label).sum().item()  # convert to numpy  # 正确的个数
+            correct = torch.eq(pred_q, label).sum().item()  # convert to numpy  # number of correct predictions
         return loss_q, correct, logits_q
 
     def zero_model_test_few_data(self, peptide, x_spt, y_spt, x_qry):
@@ -769,13 +769,13 @@ class Memory_Meta(nn.Module):
     
     def forward_with_adaptation(self, net, x, adaptation_layer, weights=None, bn_training=True):
         """Modified forward pass with adaptation layer"""
-        # 使用原始forward获取倒数第二层的输出
+        # Use original forward to get the penultimate-layer output
         features = net(x, weights[:-2] if weights is not None else None, bn_training=bn_training, return_embedding=True)
         
-        # 通过适应层
+        # Pass through the adaptation layer
         x = adaptation_layer(features)
         
-        # 通过最后一层
+        # Pass through the final layer
         if weights is not None:
             x = F.linear(x, weights[-2], weights[-1])
         else:
@@ -786,7 +786,7 @@ class Memory_Meta(nn.Module):
         """
         Few-shot learning with last layer freezing and adaptation layer
         """
-        # 创建保存loss曲线的目录
+        # Create directory for saving loss curves
         if not os.path.exists('./loss_curves'):
             os.makedirs('./loss_curves')
         
@@ -794,22 +794,22 @@ class Memory_Meta(nn.Module):
         start = []
         end = []
 
-        # 创建模型副本
+        # Create a model copy
         net = deepcopy(self.net)
 
-        # 创建和初始化适应层
-        # 设置随机种子
+        # Create and initialize the adaptation layer
+        # Set random seed
         torch.manual_seed(42)
         if torch.cuda.is_available():
             torch.cuda.manual_seed(42)
 
-        # 创建和初始化适应层
+        # Create and initialize the adaptation layer
         self.adaptation_layer = nn.Linear(608, 608)
         torch.nn.init.kaiming_normal_(
             self.adaptation_layer.weight,
             mode='fan_out',
             nonlinearity='relu', 
-            a=0.01  # 缩小初始化范围
+            a=0.01  # Narrow initialization range
         )
         torch.nn.init.zeros_(self.adaptation_layer.bias)
         if torch.cuda.is_available():
@@ -821,24 +821,24 @@ class Memory_Meta(nn.Module):
         best_weights = None
         best_adaptation_weights = None
         patience = 0
-        patience_limit = 10  # 早停阈值
-        min_delta = 1e-4    # 最小改善阈值
+        patience_limit = 10  # early stopping threshold
+        min_delta = 1e-4    # minimum improvement threshold
         
-        # 记录第一次更新的loss
+        # Record the loss from the first update
         logits = self.forward_with_adaptation(net, x_spt, adaptation_layer)
         if balance_loss:
             loss = F.cross_entropy(logits, y_spt, 
                                 weight=torch.tensor([2, 1], device=y_spt.device, dtype=torch.float))
         else:
             loss = F.cross_entropy(logits, y_spt)
-                # 计算梯度并更新参数
+                # Compute gradients and update parameters
         grad = torch.autograd.grad(loss, [net.vars[-2], net.vars[-1]] + list(adaptation_layer.parameters()), retain_graph=True)
         
-        # 准备fast weights
-        fast_weights = list(net.vars[:-2])  # 保持前面层的权重不变
+        # Prepare fast weights
+        fast_weights = list(net.vars[:-2])  # keep earlier layer weights unchanged
         fast_weights.extend([p - self.update_lr * g for p, g in zip([net.vars[-2], net.vars[-1]], grad[:2])])
         
-        # 更新适应层参数
+        # Update adaptation-layer parameters
         adaptation_weights = [p - self.update_lr * g for p, g in zip(adaptation_layer.parameters(), grad[2:])]
         adaptation_layer.weight = nn.Parameter(adaptation_weights[0])
         adaptation_layer.bias = nn.Parameter(adaptation_weights[1])
@@ -861,8 +861,8 @@ class Memory_Meta(nn.Module):
             current_loss = loss.detach().item() 
             losses.append(current_loss)
             
-            # 更新最佳模型
-            if current_loss < (best_loss - min_delta):  # 添加最小改善阈值
+            # Update best model
+            if current_loss < (best_loss - min_delta):  # apply minimum improvement threshold
                 best_loss = current_loss
                 best_weights = list(fast_weights)
                 best_adaptation_weights = [adaptation_layer.weight.data.clone(),
@@ -871,12 +871,12 @@ class Memory_Meta(nn.Module):
             else:
                 patience += 1
                 
-            # 真正的早停
+            # actual early stopping
             if patience >= patience_limit:
                 print(f"Early stopping at step {k} due to no improvement in loss")
                 break
                 
-            # 计算梯度和更新参数
+            # Compute gradients and update parameters
             grad = torch.autograd.grad(loss, [fast_weights[-2], fast_weights[-1]] + list(adaptation_layer.parameters()))
             new_fast_weights = list(fast_weights[:-2])
             new_fast_weights.extend([p - self.update_lr * g for p, g in zip([fast_weights[-2], fast_weights[-1]], grad[:2])])
@@ -886,14 +886,14 @@ class Memory_Meta(nn.Module):
             adaptation_layer.weight = nn.Parameter(adaptation_weights[0])
             adaptation_layer.bias = nn.Parameter(adaptation_weights[1])
 
-        # 使用最佳模型进行最终预测
+        # Use the best model for final prediction
         adaptation_layer.weight.data = best_adaptation_weights[0]
         adaptation_layer.bias.data = best_adaptation_weights[1]
         logits_q = self.forward_with_adaptation(net, x_qry, adaptation_layer, best_weights)
         pred_q = F.softmax(logits_q, dim=1)
         end.append(pred_q[:, 1].cpu().detach().numpy())
 
-        # 保存loss曲线
+        # Save loss curve
         plt.figure(figsize=(10, 5))
         plt.plot(losses)
         plt.title(f'Training Loss (Best Loss: {best_loss:.4f})')                         
@@ -901,7 +901,7 @@ class Memory_Meta(nn.Module):
         plt.ylabel('Loss')
         plt.grid(True)
         
-        # 创建时间戳文件名
+        # Create timestamped filename
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         plt.savefig(f'./loss_curves/loss_curve_{timestamp}.png')
         plt.close()
@@ -914,42 +914,42 @@ class Memory_Meta(nn.Module):
         return end
     def inference_with_adaptation(self, x_qry, finetuned_params):
         """
-        使用适应层和微调参数进行推理
+        Run inference with adaptation layer and fine-tuned parameters
         
         Args:
-            x_qry: 查询集数据
-            finetuned_params: 包含网络参数和适应层参数的元组
+            x_qry: query set data
+            finetuned_params: tuple containing network parameters and adaptation-layer parameters
             
         Returns:
-            list: 包含预测概率的列表
+            list: list containing prediction probabilities
         """
         try:
-            # 创建模型和适应层的深度复制
+            # Create deep copies of the model and adaptation layer
             net = deepcopy(self.net)
             adaptation_layer = deepcopy(self.adaptation_layer)
             
-            # 参数验证
+            # Validate parameters
             if not isinstance(finetuned_params, tuple) or len(finetuned_params) != 2:
                 raise ValueError("finetuned_params must be a tuple containing (network_params, adaptation_params)")
             
-            # 解包参数
+            # Unpack parameters
             fast_weights_net, adaptation_params = finetuned_params
             
-            # 获取设备信息并移动模型和参数到正确的设备
+            # Get device info and move model and parameters to the correct device
             device = x_qry.device
             adaptation_layer = adaptation_layer.to(device)
             
-            # 更新适应层参数
+            # Update adaptation-layer parameters
             adaptation_layer.weight.data = adaptation_params[0].to(device)
             adaptation_layer.bias.data = adaptation_params[1].to(device)
             
-            # 设置为评估模式
+            # Set to evaluation mode
             net.eval()
             adaptation_layer.eval()
             
-            # 执行推理
+            # Run inference
             with torch.no_grad():
-                # 使用修改后的forward_with_adaptation进行预测
+                # Predict using modified forward_with_adaptation
                 logits = self.forward_with_adaptation(
                     net=net,
                     x=x_qry,
@@ -958,53 +958,53 @@ class Memory_Meta(nn.Module):
                     bn_training=False
                 )
                 
-                # 计算softmax概率
+                # Compute softmax probabilities
                 pred = F.softmax(logits, dim=1)
                 
-                # 检查预测结果的有效性
+                # Check validity of predictions
                 if torch.isnan(pred).any() or torch.isinf(pred).any():
                     print("Warning: Found NaN or Inf values in predictions")
                     return [np.zeros(x_qry.size(0))]
                 
-                # 返回正类的概率
+                # Return probability of the positive class
                 return [pred[:, 1].cpu().detach().numpy()]
                 
         except Exception as e:
             print(f"Error during inference: {str(e)}")
-            traceback.print_exc()  # 打印完整的错误堆栈
+            traceback.print_exc()  # Print full error traceback
             return [np.zeros(x_qry.size(0))]
         finally:
-            # 清理内存
+            # Clean up memory
             del net
             del adaptation_layer
 
 
     def get_kshot_data1(self,x_spts, y_spts, k_shot, offset):
         """
-        选择样本，每次调用后更新偏移量
+        Select samples and update offset after each call
         
         Parameters:
-            x_spts: 支持集特征
-            y_spts: 支持集标签
-            k_shot: 每类样本数量
-            offset: 当前偏移量
+            x_spts: support set features
+            y_spts: support set labels
+            k_shot: number of samples per class
+            offset: current offset
         
         Returns:
-            x_spt: 选择后的特征
-            y_spt: 选择后的标签
-            new_offset: 更新后的偏移量
+            x_spt: selected features
+            y_spt: selected labels
+            new_offset: updated offset
         """
         total_samples = x_spts.shape[0]
         
-        # 获取前k_shot个样本
+        # Get first k_shot samples
         inputs_x_spts = x_spts[0:k_shot]
         inputs_y_spts = y_spts[0:k_shot]
         
-        # 获取后k_shot个样本
+        # Get next k_shot samples
         inputs_x_spts = torch.cat((inputs_x_spts, x_spts[offset:offset + k_shot]), dim=0)
         inputs_y_spts = torch.cat((inputs_y_spts, y_spts[offset:offset + k_shot]), dim=0)
         
-        # 更新偏移量
+        # Update offset
         new_offset = offset + k_shot
         
         return inputs_x_spts, inputs_y_spts, new_offset

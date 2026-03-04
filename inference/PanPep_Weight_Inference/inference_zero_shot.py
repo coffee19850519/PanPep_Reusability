@@ -44,24 +44,24 @@ def parse_args():
     parser.add_argument('--gpu', type=str, default='0', help='GPU device IDs separated by comma (e.g., "0,1,2")')
     parser.add_argument('--distillation', type=int, default=50, help='Distillation number')
     parser.add_argument('--batch_size', type=int, default=10000, help='Upper limit for batch size')
-    parser.add_argument('--test_data', type=str, 
-                       default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Weight_Inference_attention/zero_shot.csv',
+    parser.add_argument('--test_data', type=str,
+                       default='./data/test_data.csv',
                        help='Path to test data CSV')
     parser.add_argument('--negative_data', type=str,
-                       default="/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Weight_Inference_attention/Combined_library_sample_0.1pct.txt",
+                       default='./data/Control_dataset.txt',
                        help='Path to negative TCR data')
     parser.add_argument('--model_path', type=str,
-                       default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/PanPep_Reusability-main222fold10beta/support2query3',
+                       default='./Requirements',
                        help='Path to model')
     parser.add_argument('--result_dir', type=str,
                        default='result/0000',
                        help='Directory for results')
     parser.add_argument('--peptide_encoding', type=str,
-                        default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/peptide_b.npz',
+                        default='./peptide_b.npz',
                         help='Path to peptide encoding file')
     parser.add_argument('--tcr_encoding', type=str,
-                         default='/fs/ess/PAS1475/Fei/code/PanPep_Reusability-main/tcr_b.npz',
-                         help='Path to TCR encoding file')
+                        default='./tcr_b.npz',
+                        help='Path to TCR encoding file')
     parser.add_argument('--model', type=str, default='attention5_conv3_large',
                         choices=['default', 'attention8', 'attention_stack5', 'conv_stack3',
                                 'multi_head_attention5_conv3', 'attention5_conv3','large','large16','large32','attention5_conv3_large'],
@@ -111,7 +111,7 @@ def zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
         
         breakpoint = 0
         
-        # 创建一个列表来存储所有批次的结果
+        # Create a list to store results from all batches.
         all_results = []
    
         for i in range(breakpoint, batch_count):
@@ -140,7 +140,7 @@ def zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config):
                 'Label': pd.Series(current_labels).astype(np.int8)
             })
             
-            # 将当前批次结果添加到列表中，而不是立即写入文件
+            # Append current batch results to the list instead of writing immediately.
             all_results.append(output)
             
             batch_time = time.time() - batch_start_time
@@ -204,4 +204,3 @@ if __name__ == '__main__':
     peptide_encoding_dict = load_encodings(config.peptide_encoding)
     tcr_encoding_dict = load_encodings(config.tcr_encoding)
     zero_shot_inference(peptide_encoding_dict, tcr_encoding_dict, config)
-

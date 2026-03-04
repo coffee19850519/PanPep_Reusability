@@ -218,7 +218,7 @@ class Memory_Meta(nn.Module):
         self.update_lr = args.update_lr
         self.update_step = args.update_step
         self.update_step_test = args.update_step_test
-        self.net = Learner(config)  # 声明了所有网络结构中需要的变量
+        self.net = Learner(config)  # declares variables required by all network structures
         self.regular = args.regular
 
         # Count the number of parameters
@@ -479,11 +479,11 @@ class Memory_Meta(nn.Module):
                 else:
                     tmp = torch.Tensor([]).cpu()
                 for j in fast_weights:
-                    tmp = torch.cat([tmp, j.data.flatten()], dim=0)  # 将所有参数展平
+                    tmp = torch.cat([tmp, j.data.flatten()], dim=0)  # flatten all parameters
 
             self.prev_loss.append(F.softmax(logits_q).data)
             self.prev_data.append([peptide[i], x_qry[i], y_qry[i]])
-            self.models = torch.cat([self.models, tmp.unsqueeze(0)], dim=0)  # 更新的weights保存在这里
+            self.models = torch.cat([self.models, tmp.unsqueeze(0)], dim=0)  # store updated weights here
 
             # maximization of entropy
             loss_regular = loss_q + self.regular * (loss_q - loss_start)
