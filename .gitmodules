@@ -7,3 +7,6 @@
 [submodule "inference/UnifyImmun"]
 	path = inference/UnifyImmun
 	url = https://github.com/hliulab/UnifyImmun.git
+[submodule "inference/DLpTCR"]
+	path = inference/DLpTCR
+	url = https://github.com/JiangBioLab/DLpTCR.git
