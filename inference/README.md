@@ -453,6 +453,10 @@ Each TCR-peptide pair is encoded as a concatenated feature vector:
 
 If a sequence is not found in the pre-computed `.npz` cache, the script falls back to real-time encoding. Cache hit statistics are printed at the end of inference.
 
+Supplementary fig 5 [Unitylmmun independent Dataset](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/Unitylmmun_independent_Data.csv?d=w311745a2b1704f97bd85f46fef405300&csf=1&web=1&e=VbvbSJ)
+
+Supplementary fig 5 [Unifylmmun triple Dataset](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/Unifylmmun_triple_Data.csv?d=wa0b721b88b37437ea879070454c6a9ef&csf=1&web=1&e=LTYHsz)
+
 ---
 
 ## UniPMT
@@ -467,8 +471,10 @@ Follow the instructions in the official UniPMT [GitHub](https://github.com/ethan
 
 The corresponding directory in this project is `./inference/UniPMT/`.
 
+Supplementary fig 5 [UniPMT Test Data]([UniPMT_data.csv](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/Supplementary_fig_5/UniPMT_data.csv?d=wc2b6d66d50d14b1b9f18bc5a0cccf9b5&csf=1&web=1&e=D11YxI))
+
 ---
 
 ## Metrics Calculation
 
-For the full evaluation pipeline applicable to all methods above, see [Metrics_Calculation.md](Metrics_Calculation.md).
+For the full evaluation pipeline applicable to all methods above, see [Metrics_Calculation.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md).
