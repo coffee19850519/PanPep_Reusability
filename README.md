@@ -13,7 +13,7 @@ Our evaluations first examined PanPep’s inference- and training-level reproduc
 ## Documentation
 
 - [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
-- [Other Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+- [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
 ## Installation
 Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/tree/main?tab=readme-ov-file#requirements).
@@ -65,17 +65,17 @@ python inference_meta_learner.py \
 **Few-shot** and **Majority** modes include an additional `--kshot_dir` parameter for storing selected fine-tuning samples. Use this parameter to specify a fixed set of fine-tuning samples.
 
 In **Majority** mode, the `--k_shot` parameter represents a ratio rather than an absolute count of samples.
-## Other Methods
+### Baseline Methods
 
-> Full documentation: [Other Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
 
-## Metrics Calculation
+### Metrics Calculation
 
 > Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 
 The evaluation metrics pipeline is located in `./metric calculation/` and supports both classification and ranking metrics.
 
-### Classification Metrics (AUC)
+#### Classification Metrics (AUC)
 
 1. **Sample Extraction**: Use the shuffling scripts to extract samples:
    ```bash
@@ -89,7 +89,7 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
    python "./metric calculation/AUC.py" --input_file <prediction_results> --output_dir <results_dir>
    ```
 
-### Ranking Metrics
+#### Ranking Metrics
 
 1. **Sort Predictions**: First sort the prediction results:
    ```bash
@@ -99,15 +99,16 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 2. **Calculate Ranking Metrics**: Compute various ranking-based metrics:
 
    - **Top Rank Percentile**:
+     
      ```bash
      python "./metric calculation/Top_rank_percentile.py" --sorted_file <sorted_file> --output_dir <results_dir>
      ```
-
+     
    - **BEDROC Score**:
      ```bash
      python "./metric calculation/bedroc.py" --sorted_file <sorted_file> --alpha <alpha_value> --output_dir <results_dir>
      ```
-
+   
    - **Success Rate & Hit Rate**:
      ```bash
      python "./metric calculation/success_rate&hit_rate.py" --sorted_file <sorted_file> --threshold <threshold> --output_dir <results_dir>
@@ -127,6 +128,15 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 
 ### Usage
 Use the same inference modes and metrics calculation pipeline as described in [CASE 1](#case-1-inference-reproducibility-with-original-dataset).
+
+### Baseline Methods
+
+> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+
+### Metrics Calculation
+
+> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
+
 ## CASE 3: Training Reproducibility with TCRβ Extension
 
 > Full documentation: [CASE3.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE3.md)
@@ -141,6 +151,15 @@ Use the same inference modes and metrics calculation pipeline as described in [C
 
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
+
+### Baseline Methods
+
+> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+
+### Metrics Calculation
+
+> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
+
 ## CASE 4: Training Reproducibility with TCRα Extension
 
 > Full documentation: [CASE4.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE4.md)
@@ -155,6 +174,15 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
+
+### Baseline Methods
+
+> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+
+### Metrics Calculation
+
+> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
+
 ## CASE 5: Training Reproducibility with TCRαβ Extension
 
 > Full documentation: [CASE5.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE5.md)
@@ -231,9 +259,13 @@ python inferece_ab.py \
     --tcr_encoding encoding/tcr_ab.npz
 ```
 
+### Baseline Methods
+
+> Full documentation: [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
+
 ### Metrics Calculation
 
-For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
+> Full documentation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 
 ---
 
