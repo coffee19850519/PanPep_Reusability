@@ -105,7 +105,7 @@ The following values depend on your own environment or external data and are int
 
 | Parameter | Meaning | Link |
 | --- | --- | --- |
-| `train_csv` | Main training CSV path | `[link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5)` |
+| `train_csv` | Main training CSV path | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5) |
 
 Note: If you want to reproduce CASE 2, use data other than fold_7_train_Hyperparameter.csv. If you want to reproduce the hyperparameter experiments, use fold_7_train_Hyperparameter.csv.
 ### Required Runtime Settings
@@ -121,14 +121,14 @@ Note: If you want to reproduce CASE 2, use data other than fold_7_train_Hyperpar
 
 | Parameter | Meaning | Link |
 | --- | --- | --- |
-| `negative_txt` | Background TCR library or reshuffling_txt  | `[background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)  [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) ` |
+| `negative_txt` | Background TCR library or reshuffling_txt  | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)  [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) |
 
 #### If `strategy = alternating`
 
 | Parameter | Meaning | Link |
 | --- | --- | --- |
-| `background_draw_txt` | Library used in odd epochs | `[background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)` |
-| `reshuffling_txt` | Library used in even epochs | `[reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt)` |
+| `background_draw_txt` | Library used in odd epochs | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje) |
+| `reshuffling_txt` | Library used in even epochs | [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) |
 
 ### Optional Settings
 
@@ -262,13 +262,13 @@ If `save_train_data=True` and `hook=get_train_data` are used, the code can also 
 | Item | Placeholder |
 | --- | --- |
 | `strategy` | `<fill in>` |
-| `train_csv` | `[link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5)` |
+| `train_csv` | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5) |
 | `save_path` | `<fill in>` |
 | `device` | `<fill in>` |
 | `seed` | `<fill in>` |
-| `negative_txt` / `negative_csv` | `[background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)  [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) ` |
-| `background_draw_txt` | `[background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje) ` |
-| `reshuffling_txt` | `[reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt)` |
+| `negative_txt` / `negative_csv` | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)  [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) |
+| `background_draw_txt` | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje) |
+| `reshuffling_txt` | [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) |
 | `aa_dict_path` | `<fill in>` |
 
 ## General Usage

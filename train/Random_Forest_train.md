@@ -42,7 +42,7 @@ The following values depend on your own environment or datasets and are intentio
 
 | Parameter | Meaning | Link |
 | --- | --- | --- |
-| `data_csv` | Training CSV path | `[link](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/rf_train_data/fold_7_train_all_train_data.csv?d=w21fd0976da9d44aa967f7a3afd11124f&csf=1&web=1&e=wxACKc)` |
+| `data_csv` | Training CSV path | [link](https://mailmissouri-my.sharepoint.com/:x:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/rf_train_data/fold_7_train_all_train_data.csv?d=w21fd0976da9d44aa967f7a3afd11124f&csf=1&web=1&e=wxACKc) |
 
 ### Runtime and Output Settings
 
