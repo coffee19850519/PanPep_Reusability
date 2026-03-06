@@ -22,7 +22,8 @@ Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/
 ## Quick Start
 
 ### Training Code
-The training pipeline is located in `./train/` with the main entry point at [`train.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/train/train.py).
+
+For PanPep training, please see the [PanPep Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_train.md). For Random Forest baseline training, please see the [Random Forest Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/Random_Forest_train.md).
 
 ## CASE 1: Inference Reproducibility with Original Dataset
 
@@ -272,7 +273,7 @@ python inferece_ab.py \
 ## TODO
 
 - [ ] Update extracted classification dataset in the paper
-- [ ] Update training pipeline description and related data
+- [x] Update training pipeline description and related data
 - [ ] Update Jupyter notebooks
 
 ---
