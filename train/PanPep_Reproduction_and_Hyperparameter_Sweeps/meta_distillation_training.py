@@ -14,8 +14,7 @@ from torch.utils.data import DataLoader
 
 from Memory_meta import Memory_Meta
 from Memory_meta import Memory_module
-from PepTCRdict import PepTCRdict, PepTCRdict_new, PepTCRdict_ranking
-from PepTCRdict_dual_source import PepTCRdict_dual_source
+from PepTCRdict import PepTCRdict
 from PepTCRdict_alternating_source import PepTCRdict_alternating_source
 
 from utils import (
@@ -80,26 +79,6 @@ def train_main(train_data, save_path, logger_file, task_num: int = 166, hook=Non
             os.path.join(Project_path,"PanPep_train", Negative_dataset),
             Support, Query,
             aa_dict_path=aa_dict_path,
-            mode='train'
-        )
-    elif strategy == "mode1":
-        Training_data = PepTCRdict_new(
-            train_data, negative_data, Support, Query,
-            aa_dict_path=aa_dict_path, mode='train'
-        )
-    elif strategy == "ranking":
-        Training_data = PepTCRdict_ranking(
-            train_data, negative_data, Support, Query,
-            aa_dict_path=aa_dict_path, mode='train'
-        )
-    elif strategy == "dual_source":
-        if background_draw is None or reshuffling is None:
-            raise ValueError("dual_source strategy requires both background_draw and reshuffling")
-        Training_data = PepTCRdict_dual_source(
-            train_data, background_draw, reshuffling,
-            Support, Query,
-            aa_dict_path=aa_dict_path,
-            dual_source_ratio=dual_source_ratio,
             mode='train'
         )
     elif strategy == "alternating":
