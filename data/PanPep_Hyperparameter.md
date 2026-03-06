@@ -6,13 +6,13 @@ This case focuses on the training-level reproducibility of PanPep under the hype
 
 ## Data Requirements
 
-- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Em3lIjtz-fxOnnz64yzprsoBNVrEvjkbzrBlK4Pa6-FWwg?e=KVoaZd)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgBt5SI7c_n8Tp58-uMs6a7KATVaxL45G86wZSuD2uvhVsI)
 - **reshuffling.txt**: Available on [here](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt)
-- **Control_dataset.txt**: Available on [here](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)
-- Pre-trained Checkpoints: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/checkpoint/hyperparameter_PanPep?csf=1&web=1&e=n9VZ8t)
+- **Control_dataset.txt**: Available on [here](https://mailmissouri-my.sharepoint.com/:t:/g/personal/hefe_umsystem_edu/IQA1Nl3AA947RIzY6aDGDnNzASb1hyvWzldypntzonc-0xY?e=LFgYNJ)
+- Pre-trained Checkpoints: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgDRTJoxAphMQLRNoN8yWcycAUmYmsAKZ9U0z5-xicQYc6Y?e=vLwNvT)
 - **Encoding Files**:
-  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=84cga4)
-  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=CgX01O)
+  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQD6u6o4C8TTSqu0KI1MxyWVATgEAOTGVT8GTbYxFV36PHU?e=eT1wuR)
+  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQDHGc-PFBR9QKgZ8IS2awnvAZk_e_PchFCu0qhdc5XDr9Y?e=ELleVD)
 
 ---
 
