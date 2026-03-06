@@ -1,4 +1,4 @@
-# hyperparameter PanPep
+# PanPep Hyperparameter Reproduction
 
 ## Overview
 
@@ -9,7 +9,7 @@ This case focuses on the training-level reproducibility of PanPep under the hype
 - **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Em3lIjtz-fxOnnz64yzprsoBNVrEvjkbzrBlK4Pa6-FWwg?e=KVoaZd)
 - **reshuffling.txt**: Available on [here](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt)
 - **Control_dataset.txt**: Available on [here](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/PanPep-Provided%20Dataset/Control%20dataset_PanPep.txt?csf=1&web=1&e=M4YPje)
-- **Pre-trained Checkpoints**: Download from [here]([hyperparameter_PanPep](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/checkpoint/hyperparameter_PanPep?csf=1&web=1&e=pdQfe5))
+- **Pre-trained Checkpoints**: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/checkpoint/hyperparameter_PanPep?csf=1&web=1&e=eX2qqN)
 - **Encoding Files**:
   - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=84cga4)
   - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=CgX01O)
