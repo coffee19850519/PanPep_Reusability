@@ -105,9 +105,12 @@ The following values depend on your own environment or external data and are int
 
 | Parameter | Meaning | Link |
 | --- | --- | --- |
-| `train_csv` | Main training CSV path | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5) |
+| `train_csv` | Main training CSV path | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data/beta?csf=1&web=1&e=ZD1W47) |
 
 Note: If you want to reproduce CASE 2, use data other than fold_7_train_Hyperparameter.csv. If you want to reproduce the hyperparameter experiments, use fold_7_train_Hyperparameter.csv.
+
+Note: If you want to reproduce CASE 4, please use an alternative `train_csv` from the [alpha training data folder](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/train_data/alpha?csf=1&web=1&e=mt8RjP) and the corresponding `background_draw_txt` file [Control dataset_tcra.txt](https://mailmissouri-my.sharepoint.com/:t:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/independent_dataset(alpha)/Control dataset_tcra.txt?csf=1&web=1&e=hdATlm).
+
 ### Required Runtime Settings
 
 | Parameter | Meaning | Placeholder |
@@ -262,7 +265,7 @@ If `save_train_data=True` and `hook=get_train_data` are used, the code can also 
 | Item | Placeholder |
 | --- | --- |
 | `strategy` | `<fill in>` |
-| `train_csv` | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data?csf=1&web=1&e=DIGlD5) |
+| `train_csv` | [link](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/train_data/beta?csf=1&web=1&e=ZD1W47) |
 | `save_path` | `<fill in>` |
 | `device` | `<fill in>` |
 | `seed` | `<fill in>` |

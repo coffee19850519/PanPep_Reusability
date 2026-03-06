@@ -101,7 +101,7 @@ python inference_few_shot.py \
     --gpu 0 \
     --mode single \
     --distillation 3 \
-    --support 4 \
+    --support 2 \
     --test_data ./data/test_data.csv \
     --negative_data ./data/Control_dataset.txt \
     --model_path ./Requirements \
@@ -110,7 +110,7 @@ python inference_few_shot.py \
     --tcr_encoding ./tcr_a.npz
 ```
 
-For full parameter descriptions, see [CASE 2](CASE2.md).
+For full parameter descriptions, see [CASE 1](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md).
 
 ---
 

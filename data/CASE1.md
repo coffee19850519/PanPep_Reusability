@@ -127,7 +127,7 @@ python inference_few_shot.py \
     --mode single \
     --distillation 3 \
     --batch_size 10000 \
-    --support 4 \
+    --support 2 \
     --test_data ./data/test_data.csv \
     --negative_data ./data/Control_dataset.txt \
     --model_path ./Requirements \
@@ -139,10 +139,10 @@ python inference_few_shot.py \
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `--gpu` | GPU device IDs (comma-separated) | `0` |
-| `--mode` | Inference mode: `single` or `mixed` | `mixed` |
+| `--mode` | Inference mode: `single` or `mixed` | `single` |
 | `--distillation` | Number of distillation steps | `3` |
 | `--batch_size` | Upper limit for batch size | `10000` |
-| `--support` | K-shot value (number of support samples) | `4` |
+| `--support` | K-shot value (number of support samples) | `2` |
 | `--test_data` | Path to test data CSV | `./data/test_data.csv` |
 | `--negative_data` | Path to negative TCR data (query negatives) | `./data/Control_dataset.txt` |
 | `--negative_data_background` | [mixed only] Background negative library for support set | `./data/Control_dataset.txt` |
