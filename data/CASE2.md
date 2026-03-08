@@ -103,7 +103,7 @@ Use [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusa
 
 ## Data Requirements
 
-- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/unssen_data?csf=1&web=1&e=4OWoX0)
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/unssen_data?csf=1&web=1&e=4OWoX0)
 - **Pre-trained Checkpoints**: Download from the [original PanPep repository](https://github.com/bm2-lab/PanPep/tree/main/Requirements/model.pt)
 - **Encoding Files**:
   - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=0QEsas)
