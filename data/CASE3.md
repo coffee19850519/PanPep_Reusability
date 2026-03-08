@@ -75,7 +75,6 @@ python inference_zero_shot.py \
     --result_dir result/zero \
     --peptide_encoding ./peptide_b.npz \
     --tcr_encoding ./tcr_b.npz \
-    --model attention5_conv3_large
 ```
 
 ### Majority

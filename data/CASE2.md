@@ -54,7 +54,6 @@ python inference_zero_shot.py \
     --result_dir result/zero \
     --peptide_encoding ./peptide_b.npz \
     --tcr_encoding ./tcr_b.npz \
-    --model attention5_conv3_large
 ```
 
 ### Majority
@@ -99,3 +98,28 @@ For full parameter descriptions, see [CASE 1](https://github.com/coffee19850519/
 ## Metrics Calculation
 
 Use [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction. See [Metrics_Calculation.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md) for the full pipeline.
+
+## Unseen Setting
+
+## Data Requirements
+
+- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/unssen_data?csf=1&web=1&e=4OWoX0)
+- **Pre-trained Checkpoints**: Download from the [original PanPep repository](https://github.com/bm2-lab/PanPep/tree/main/Requirements/model.pt)
+- **Encoding Files**:
+  - [tcr_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/Efq7qjgLxNNKq7QojUzHJZUBOAQA5MZVPwZNtjEVXfo8dQ?e=0QEsas)
+  - [peptide_b.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EccZz48UFH1AqBnwhLZrCe8BmT9789yEUK7SqF1zlcOv1g?e=OIM7Jc)
+
+### Zero-shot
+
+```bash
+python inference_zero_shot.py \
+    --gpu 0 \
+    --distillation 50 \
+    --batch_size 10000 \
+    --test_data ./data/test_data.csv \
+    --negative_data ./data/Control_dataset.txt \
+    --model_path ./Requirements \
+    --result_dir result/zero \
+    --peptide_encoding ./peptide_b.npz \
+    --tcr_encoding ./tcr_b.npz \
+```

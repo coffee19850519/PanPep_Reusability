@@ -61,6 +61,8 @@ python inference_meta_learner.py \
     --tcr_encoding ./tcr_b.npz \    # TCR encoding file
 ```
 
+To reproduce the classification results, you can first run inference and then extract the values from the files provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig2.zip?csf=1&web=1&e=jptqb0).
+
 ### **Mode-Specific Differences**
 
 **Few-shot** and **Majority** modes include an additional `--kshot_dir` parameter for storing selected fine-tuning samples. Use this parameter to specify a fixed set of fine-tuning samples.
@@ -130,6 +132,10 @@ The evaluation metrics pipeline is located in `./metric calculation/` and suppor
 ### Usage
 Use the same inference modes and metrics calculation pipeline as described in [CASE 1](#case-1-inference-reproducibility-with-original-dataset).
 
+To reproduce the classification results, you can first run inference and then extract the values from the files provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig3.zip?csf=1&web=1&e=wYVPYW).
+
+To reproduce the unseen classification results, you can first run inference and then extract the values from the files provided at the following link [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig3_unseen.zip?csf=1&web=1&e=be1H8S).
+
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II \| UnifyImmun \| UniPMT \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -153,6 +159,8 @@ Use the same inference modes and metrics calculation pipeline as described in [C
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
 
+To reproduce the classification results, you can first run inference and then extract the values from the files provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig4.zip?csf=1&web=1&e=zm1RCo).
+
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II \| UnifyImmun \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -175,6 +183,8 @@ For metrics calculation, follow the same pipeline as described in [CASE 1](#metr
 
 ### Usage
 For metrics calculation, follow the same pipeline as described in [CASE 1](#metrics-calculation), but use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py) for sample extraction.
+
+To reproduce the classification results, you can first run inference and then extract the values from the files provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).
 
 ### Baseline Methods
 
@@ -260,6 +270,8 @@ python inferece_ab.py \
     --tcr_encoding encoding/tcr_ab.npz
 ```
 
+To reproduce the classification results, you can first run inference and then extract the values from the files provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep reusability report/data/classification/fig6.zip?csf=1&web=1&e=gT9jcX).
+
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -276,7 +288,7 @@ Full documentation: [PanPep Hyperparameter Reproduction](https://github.com/coff
 
 ## TODO
 
-- [ ] Update extracted classification dataset in the paper
+- [x] Update extracted classification dataset in the paper
 - [x] Update training pipeline description and related data
 - [ ] Update Jupyter notebooks
 
