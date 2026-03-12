@@ -24,7 +24,8 @@ Inference Output (Parquet/CSV)
     ├── AUC.py                    (classification)
     ├── Top_rank_percentile.py    (ranking)
     ├── bedroc.py                 (ranking)
-    └── success_rate&hit_rate.py  (ranking)
+    ├── success_rate&hit_rate.py  (ranking)
+    └── get_success_AUC.py        (partial AUC of success/hit rate curves)
 ```
 
 ---
@@ -249,6 +250,57 @@ Same interface as [`Top_rank_percentile.py`](https://github.com/coffee19850519/P
 
 ---
 
+### [`get_success_AUC.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_success_AUC.py) — Partial AUC of Success/Hit Rate Curves
+
+Computes **partial AUC** values under the Success Rate or Hit Rate curve for each directory, integrating over a specified fraction of the Top-K range. Useful for summarising early-enrichment performance as a single scalar per peptide/directory.
+
+Reads the output of  [`success_rate&hit_rate.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/success_rate%26hit_rate.py) directly (CSV or Parquet).
+
+```bash
+python metric_calculation/get_success_AUC.py \
+    --input <results.csv or results.parquet> \
+    --rate-type Success_Rate \
+    --cutoffs 0.0001 0.001 0.01 0.05 0.1 0.2 1.0 \
+    --output <output.csv>
+```
+
+**Parameters**:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `--input` | Path to input CSV or Parquet file | required |
+| `--rate-type` | Column name of the rate to integrate (`Success_Rate` or `Hit_Rate`) | `Success_Rate` |
+| `--cutoffs` | One or more cutoff values in `(0, 1]` defining the Top-K fraction to integrate over | `0.0001 0.001 0.01 0.05 0.10 0.20 1.0` |
+| `--replace-zeros-for-hit-rate` | Replace zero Hit Rate values with a small positive number before integration (log-scale friendlier) | `False` |
+| `--output` | Output CSV path. Auto-generated from input filename if omitted | auto |
+
+**Required input columns**: `Directory`, `Top_K`, and the column named by `--rate-type`
+
+**How cutoffs work**: For each directory, `Top_K` is normalised to `[0, 1]` (min–max). The partial AUC is the area under the rate curve from `x=0` to `x=cutoff`, computed with the trapezoidal rule. A point is linearly interpolated at the cutoff boundary when needed.
+
+**Output columns**:
+
+| Column | Description |
+|--------|-------------|
+| `Directory` | Peptide / directory identifier |
+| `n_rows` | Number of data points used |
+| `AUC_<cutoff>_area` | Partial AUC area at each cutoff (e.g. `AUC_1pct_area`, `AUC_5pct_area`) |
+
+Cutoff labels are formatted as `{pct}pct` (e.g. `0.01 → 1pct`, `0.001 → 0_1pct`, `0.0001 → 0_01pct`).
+
+If `--output` is not specified, the output file is saved next to the input file with a name like `<stem>_success_rate_partial_auc_by_directory.csv`.
+
+**Examples**:
+
+```bash
+# Partial AUC of Success Rate at standard cutoffs
+python metric_calculation/get_success_AUC.py \
+    --input results.parquet \
+    --rate-type Success_Rate
+```
+
+---
+
 ## Column Name Reference
 
 | Script | Key Input Columns | Key Output Columns |
@@ -260,3 +312,4 @@ Same interface as [`Top_rank_percentile.py`](https://github.com/coffee19850519/P
 | [`Top_rank_percentile.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/Top_rank_percentile.py) | `Label` | `Success_Rate`, `Hit_Rate` |
 | [`bedroc.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/bedroc.py) | `Label` | `BEDROC_Score` |
 | [`success_rate&hit_rate.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/success_rate%26hit_rate.py) | `Label` | `Success_Rate`, `Hit_Rate` |
+| [`get_success_AUC.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_success_AUC.py) | `Directory`, `Top_K`, `Success_Rate`/`Hit_Rate` | `AUC_<cutoff>_area` per cutoff |
