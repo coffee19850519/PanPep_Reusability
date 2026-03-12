@@ -13,76 +13,150 @@ This document covers data preparation and inference usage for the following base
 
 ## Data Preparation
 
-[`data_process.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/data_process/data_process.py) (located in `./inference/data_process/`) generates per-peptide input CSV files in the format required by each baseline method. It accepts a peptide list and a TCR beta pool, and optionally a TCR alpha pool, producing one CSV file per peptide.
+[`data_process.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/data_process/data_process.py) (located in `./inference/data_process/`) generates per-peptide input CSV files in the format required by each baseline method. It produces one CSV file per peptide, where each row is a (peptide, TCR) pair with a `label` column.
 
-### Usage
-
-```bash
-python data_process.py \
-    --target <dlptcr|ergo2|rf|unifyimmun|all> \
-    --peptide-file <path_to_peptide_file> \
-    --tcr-file <path_to_tcrb_file> \
-    --output-folder <output_directory> \
-    [--tcra-file <path_to_tcra_file>]
-```
+### Parameters
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
 | `--target` | Format to generate: `dlptcr`, `ergo2`, `rf`, `unifyimmun`, or `all` | `all` |
-| `--peptide-file` | Peptide file path (`.txt`, `.csv`, or `.parquet`) | required |
-| `--tcr-file` | TCRβ file path (`.txt`, `.csv`, or `.parquet`) | required |
-| `--tcra-file` | TCRα file path (optional; used by DLpTCR and ERGO-II) | — |
+| `--positive-csv` | CSV containing known positive (peptide, TCR) pairs; provides peptide list and label=1 pairs. Mutually exclusive with `--peptide-file`. | — |
+| `--peptide-file` | Plain peptide list (`.txt`, `.csv`, `.parquet`). Use when no label information is available. Mutually exclusive with `--positive-csv`. | — |
+| `--tcr-file` | TCR pool file (`.txt`, `.csv`, `.parquet`). For `--chain ab`, must be a CSV with both alpha and beta columns. | required |
+| `--chain` | TCR chain type: `beta` (default), `alpha`, or `ab` (both chains; DLpTCR and ERGO-II only) | `beta` |
+| `--tcra-file` | Additional TCRα file (optional; single-chain mode only) | — |
 | `--output-folder` | Root output directory | required |
 
-### Input File Formats
+### Input Modes
+
+#### Mode 1 — Classic (all labels = 0)
+
+Use when you have a plain peptide list and a TCR pool with no binding labels.
+
+```bash
+python data_process.py \
+    --peptide-file peptides.txt \
+    --tcr-file tcr_pool.txt \
+    --chain beta \
+    --output-folder ./output \
+    --target all
+```
 
 **Peptide file** — any of:
 - Plain text (`.txt`): one peptide per line
 - CSV/Parquet: column named `peptide` or `epitope` (first column used as fallback)
 
-**TCR file** — any of:
+**TCR file** (single chain) — any of:
 - Plain text (`.txt`): one sequence per line
-- CSV/Parquet: for TCRβ, column named `tcr`, `tcrb`, `trb`, `binding_TCR`, etc.; for TCRα, column named `tcra`, `tra`, `alpha`, etc.
+- CSV: column named `tcr`, `tcrb`, `trb`, `binding_TCR`, etc. (beta) or `tcra`, `tra`, `alpha`, etc. (alpha)
 
-All sequences are validated against the standard 20 amino acids (`ARNDCQEGHILKMFPSTWYV`). Invalid or missing sequences are silently filtered out.
+#### Mode 2 — Labeled (label = 1 for known positive pairs)
+
+Use when you have a CSV of known positive (peptide, TCR) pairs. Peptide list is extracted from the CSV; the TCR pool comes from `--tcr-file`. For each peptide, the output contains all TCRs from the pool plus any positive TCRs from the CSV not already in the pool.
+
+**Label assignment**:
+- `label = 1` if `(peptide, TCR)` pair appears in `--positive-csv`
+- `label = 0` otherwise
+
+```bash
+python data_process.py \
+    --positive-csv positive_pairs.csv \
+    --tcr-file tcr_pool.txt \
+    --chain beta \
+    --output-folder ./output \
+    --target all
+```
+
+**`--positive-csv` format by chain**:
+
+| `--chain` | Required columns |
+|-----------|-----------------|
+| `beta` | `peptide` (or `epitope`) + `binding_TCR` (or `tcr`/`tcrb`/`trb`) |
+| `alpha` | `peptide` (or `epitope`) + `tcra` (or `alpha`/`tra`/`cdr3a`) |
+| `ab` | `peptide` (or `epitope`) + `alpha` (or `tcra`) + `beta` (or `tcrb`) |
+
+**`--tcr-file` format by chain**:
+
+| `--chain` | Format |
+|-----------|--------|
+| `beta` / `alpha` | `.txt` (one sequence per line) or CSV with single chain column |
+| `ab` | CSV with both `tcra` (or `alpha`) and `tcrb` (or `beta`) columns |
+
+All sequences are validated against the 20 standard amino acids (`ARNDCQEGHILKMFPSTWYV`). Invalid or missing sequences are silently filtered.
 
 ### Output Structure
 
-When `--target all`, the script creates one subdirectory per method:
+When `--target all`, files are written to one subdirectory per method:
 
 ```
 <output-folder>/
 ├── DLpTCR_ext/
 │   ├── <peptide1>.csv
-│   └── <peptide2>.csv
+│   └── ...
 ├── ERGO-II_ext/
 │   ├── <peptide1>.csv
 │   └── ...
 ├── Random_Forest/
+│   ├── <peptide1>.csv
 │   └── ...
 └── UnifyImmun_ext/
+    ├── <peptide1>.csv
     └── ...
 ```
 
-Each CSV contains the full TCR pool paired with that peptide, with label `0` (unlabeled). When targeting a single method, files are written directly to `--output-folder`.
+When targeting a single method, files are written directly to `--output-folder`.
 
-### Example
+**Output columns per format**:
+
+| Format | Columns |
+|--------|---------|
+| Random Forest / UnifyImmun | `tcr`, `peptide`, `label` |
+| DLpTCR | `TCRA_CDR3`, `TCRB_CDR3`, `Epitope`, `label` |
+| ERGO-II | `TRA`, `TRB`, `TRAV`, `TRAJ`, `TRBV`, `TRBJ`, `T-Cell-Type`, `Peptide`, `MHC`, `label` |
+
+For single-chain inputs, the unused chain column is left empty.
+
+### Examples
 
 ```bash
-# Generate input for all methods at once
+# Classic mode — beta chain, all formats, no labels
 python data_process.py \
-    --target all \
-    --peptide-file ./data/peptides.txt \
-    --tcr-file ./data/tcr_pool.txt \
-    --output-folder ./input_data
+    --peptide-file peptides.txt \
+    --tcr-file tcrb_pool.txt \
+    --chain beta \
+    --output-folder ./output_classic \
+    --target all
 
-# Generate only ERGO-II input, with alpha chain
+# Labeled mode — beta chain, all formats
 python data_process.py \
-    --target ergo2 \
-    --peptide-file ./data/peptides.csv \
-    --tcr-file ./data/tcrb_pool.txt \
-    --tcra-file ./data/tcra_pool.txt \
-    --output-folder ./input_data/ergo2
+    --positive-csv majority_Paper.csv \
+    --tcr-file tcrb_pool.txt \
+    --chain beta \
+    --output-folder ./output_labeled \
+    --target all
+
+# Labeled mode — alpha chain, DLpTCR only
+python data_process.py \
+    --positive-csv alpha_pairs.csv \
+    --tcr-file tcra_pool.txt \
+    --chain alpha \
+    --output-folder ./output_alpha \
+    --target dlptcr
+
+# Labeled mode — paired αβ chains, DLpTCR and ERGO-II
+python data_process.py \
+    --positive-csv tcrab_majority.csv \
+    --tcr-file pooling_tcrab.csv \
+    --chain ab \
+    --output-folder ./output_ab \
+    --target dlptcr
+
+python data_process.py \
+    --positive-csv tcrab_majority.csv \
+    --tcr-file pooling_tcrab.csv \
+    --chain ab \
+    --output-folder ./output_ab \
+    --target ergo2
 ```
 
 ---
