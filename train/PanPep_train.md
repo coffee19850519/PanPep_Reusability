@@ -113,10 +113,10 @@ Note: If you want to reproduce CASE 4, please use an alternative `train_csv` fro
 
 ### Required Runtime Settings
 
-| Parameter | Meaning | Placeholder |
+| Parameter | Meaning | default |
 | --- | --- | --- |
-| `save_path` | Output directory for checkpoints and logs | `<fill in>` |
-| `device` | Training device, e.g. `cuda` or `cpu` | `<fill in>` |
+| `save_path` | Output directory for checkpoints and logs | `./checkpoints` |
+| `device` | Training device, e.g. `cuda` or `cpu` | `cuda:0` |
 
 ### Strategy-Specific Data Links
 
@@ -135,12 +135,12 @@ Note: If you want to reproduce CASE 4, please use an alternative `train_csv` fro
 
 ### Optional Settings
 
-| Parameter | Meaning | Placeholder |
+| Parameter | Meaning | default |
 | --- | --- | --- |
-| `aa_dict_path` | Atchley factor dictionary path | `<fill in>` |
-| `seed` | Random seed | `<fill in>` |
-| `log_file` | Log file path | `<fill in>` |
-| `config_path` | Path to `TrainingConfig.yaml` | `<fill in>` |
+| `aa_dict_path` | Atchley factor dictionary path | `./Requirements/dic_Atchley_factors.pkl` |
+| `seed` | Random seed | `42` |
+| `log_file` | Log file path | `./log` |
+| `config_path` | Path to `TrainingConfig.yaml` | `./Configs/TrainingConfig.yaml` |
 
 ## Default Hyperparameters
 
@@ -262,17 +262,17 @@ If `save_train_data=True` and `hook=get_train_data` are used, the code can also 
 
 ## Fill-in Checklist
 
-| Item | Placeholder                                                                                                                                                                                                                                                                                                                                                              |
+| Item | default                                                                                                                                                                                                                                                                                                                                                       |
 | --- |--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `strategy` | `<fill in>`                                                                                                                                                                                                                                                                                                                                                              |
+| `strategy` | `mode2`                                                                                                                                                                                                                                                                                                                                                       |
 | `train_csv` | [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgBCcaPnNfoaT6Km_T-YQY9hAal_AmYTs-pPF0yePMtd9Y0)                                                                                                                                                                                                                                          |
-| `save_path` | `<fill in>`                                                                                                                                                                                                                                                                                                                                                              |
-| `device` | `<fill in>`                                                                                                                                                                                                                                                                                                                                                              |
-| `seed` | `<fill in>`                                                                                                                                                                                                                                                                                                                                                              |
+| `save_path` | `./checkpoints`                                                                                                                                                                                                                                                                                                                                                 |
+| `device` | `cuda:0`                                                                                                                                                                                                                                                                                                                                                       |
+| `seed` | `42`                                                                                                                                                                                                                                                                                                                                                             |
 | `negative_txt` / `negative_csv` | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/g/personal/hefe_umsystem_edu/IQA1Nl3AA947RIzY6aDGDnNzASb1hyvWzldypntzonc-0xY?e=LMUJhi) \| [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt) |
 | `background_draw_txt` | [background-draw](https://mailmissouri-my.sharepoint.com/:t:/g/personal/hefe_umsystem_edu/IQA1Nl3AA947RIzY6aDGDnNzASb1hyvWzldypntzonc-0xY?e=kRVoit)                                                                                                                                                      |
 | `reshuffling_txt` | [reshuffling](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_Reproduction_and_Hyperparameter_Sweeps/reshuffling.txt)                                                                                                                                                                                                                        |
-| `aa_dict_path` | `<fill in>`                                                                                                                                                                                                                                                                                                                                                              |
+| `aa_dict_path` | `./Requirements/dic_Atchley_factors.pkl`                                                                                                                                                                                                                                                                                                                        |
 
 ## General Usage
 

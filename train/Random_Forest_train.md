@@ -46,11 +46,10 @@ The following values depend on your own environment or datasets and are intentio
 
 ### Runtime and Output Settings
 
-| Parameter | Meaning | Placeholder |
+| Parameter | Meaning | default |
 | --- | --- | --- |
-| `output_model` | Output model file path | `<fill in>` |
-| `aa_dict_path` | Atchley factor dictionary path | `<fill in>` |
-| `cuda_env` | CUDA / RAPIDS / cuML environment description | `<fill in>` |
+| `output_model` | Output model file path | `./checkpoint` |
+| `aa_dict_path` | Atchley factor dictionary path | `./dic_Atchley_factors.pkl` |
 
 ## Fixed Feature-Engineering Parameters
 
