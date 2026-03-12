@@ -147,4 +147,4 @@ Yicheng Gao, Yuli Gao, Qi Liu et al. Pan-Peptide Meta Learning for T-Cell Recept
 
 ## Contact
 
-For any questions or issues, Please contact Fei He via [hefe@missouri.edu](hefe@missouri.edu)
+For any questions or issues, Please contact Fei He via [feihe@usf.edu](feihe@usf.edu)
