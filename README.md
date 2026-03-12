@@ -14,12 +14,11 @@ Our evaluations first examined PanPep’s inference- and training-level reproduc
 
 - The following documents provide detailed instructions for different parts of the project:
 
-  \- [PanPep Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_train.md): instructions for training PanPep.
-  \- [Random Forest Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/Random_Forest_train.md): instructions for training the Random Forest baseline.
-  \- [Data Directory](https://github.com/coffee19850519/PanPep_Reusability/tree/main/data): datasets and related files required for the experiments.
-  \- [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md): instructions for running baseline methods other than PanPep.
-
-  \- [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md): instructions for computing the evaluation metrics.
+  * [PanPep Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_train.md): instructions for training PanPep.
+  * [Random Forest Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/Random_Forest_train.md): instructions for training the Random Forest baseline.
+  * [Data Directory](https://github.com/coffee19850519/PanPep_Reusability/tree/main/data): datasets and related files required for the experiments.
+  * [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md): instructions for running baseline methods other than PanPep.
+  * [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md): instructions for computing the evaluation metrics.
 
 ## Installation
 Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/tree/main?tab=readme-ov-file#requirements).
