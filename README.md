@@ -136,7 +136,7 @@ Full documentation: [PanPep Hyperparameter Reproduction](https://github.com/coff
 ---
 
 ## Data and Model Weights
-The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.18861905).
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18913335.svg)](https://doi.org/10.5281/zenodo.18913335)
 
 ## Original Study
 
