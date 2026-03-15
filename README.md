@@ -14,12 +14,11 @@ Our evaluations first examined PanPep’s inference- and training-level reproduc
 
 - The following documents provide detailed instructions for different parts of the project:
 
-  \- [PanPep Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_train.md): instructions for training PanPep.
-  \- [Random Forest Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/Random_Forest_train.md): instructions for training the Random Forest baseline.
-  \- [Data Directory](https://github.com/coffee19850519/PanPep_Reusability/tree/main/data): datasets and related files required for the experiments.
-  \- [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md): instructions for running baseline methods other than PanPep.
-
-  \- [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md): instructions for computing the evaluation metrics.
+  * [PanPep Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/PanPep_train.md): instructions for training PanPep.
+  * [Random Forest Training Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/train/Random_Forest_train.md): instructions for training the Random Forest baseline.
+  * [Data Directory](https://github.com/coffee19850519/PanPep_Reusability/tree/main/data): datasets and related files required for the experiments.
+  * [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md): instructions for running baseline methods other than PanPep.
+  * [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md): instructions for computing the evaluation metrics.
 
 ## Installation
 Please refer to PanPep's installation [guide](https://github.com/bm2-lab/PanPep/tree/main?tab=readme-ov-file#requirements).
@@ -43,7 +42,7 @@ This case corresponds to the experiments shown in Fig. 2 and Extended Data Fig. 
 
 > Metrics Calculation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 >
-> To reproduce the classification results, please first run inference and then use the classification samples provided at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig2.zip?csf=1&web=1&e=jptqb0).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig2.zip?csf=1&web=1&e=jptqb0).
 
 ## CASE 2: Inference Reproducibility with Independent 
 
@@ -61,9 +60,9 @@ This case corresponds to the experiments shown in Fig. 3 and Extended Data Fig. 
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 >
-> To reproduce the classification results, please first run inference and then use the classification samples provided at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3.zip?csf=1&web=1&e=wYVPYW).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3.zip?csf=1&web=1&e=wYVPYW).
 >
-> To reproduce the unseen  classification results, please first run inference and then use the classification samples provided at the following  [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3_unseen.zip?csf=1&web=1&e=be1H8S).
+> The unseen classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3_unseen.zip?csf=1&web=1&e=be1H8S).
 
 ## CASE 3: Training Reproducibility with TCRβ Extension
 
@@ -81,7 +80,7 @@ This case corresponds to the experiments shown in Fig. 4 and Extended Data Fig. 
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 >
-> To reproduce the classification results, please first run inference and then use the classification samples provided at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig4.zip?csf=1&web=1&e=zm1RCo).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig4.zip?csf=1&web=1&e=zm1RCo).
 
 ## CASE 4: Training Reproducibility with TCRα Extension
 
@@ -99,7 +98,7 @@ This case corresponds to the experiments shown in Fig. 5 and Extended Data Fig. 
 
 > Metrics Calculation:see [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 >
-> To reproduce the classification results, please first run inference and then use the classification samples provided at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).
 
 ## CASE 5: Training Reproducibility with TCRαβ Extension
 
@@ -117,7 +116,7 @@ This case corresponds to the experiments shown in Fig. 6 and Extended Data Fig. 
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
 >
-> To reproduce the classification results, please first run inference and then use the classification samples provided at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig6.zip?csf=1&web=1&e=gT9jcX).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig6.zip?csf=1&web=1&e=gT9jcX).
 
 ---
 
@@ -148,4 +147,4 @@ Yicheng Gao, Yuli Gao, Qi Liu et al. Pan-Peptide Meta Learning for T-Cell Recept
 
 ## Contact
 
-For any questions or issues, Please contact Fei He via [hefe@missouri.edu](hefe@missouri.edu)
+For any questions or issues, Please contact Fei He via [feihe@usf.edu](feihe@usf.edu)
