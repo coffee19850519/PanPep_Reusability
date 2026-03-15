@@ -18,25 +18,15 @@ sys.path.append(PROJECT_ROOT)
 
 
 from utils import (
-    Args, get_model, Model_config, Model_config_attention8, Model_config_attention_stack5,
-    Model_config_conv_stack3, Model_config_multi_head_attention5_conv3, Model_config_attention5_conv3,
+    Args, get_model, Model_config,
     Project_path, Aa_dict, task_embedding, zero_task_embedding,
     load_support_data, get_query_data, save_support_data,
-    sample_multi_round_support_data, load_multi_round_support_data, get_query_data_multi_round,Model_config_large,Model_config_large_16,Model_config_large_32,Model_config_attention5_conv3_large
+    sample_multi_round_support_data, load_multi_round_support_data, get_query_data_multi_round
 )
 
 
 MODEL_CONFIG_MAP = {
     'default': Model_config,
-    'attention8': Model_config_attention8,
-    'attention_stack5': Model_config_attention_stack5,
-    'conv_stack3':  Model_config_conv_stack3,
-    'multi_head_attention5_conv3': Model_config_multi_head_attention5_conv3,
-    'attention5_conv3': Model_config_attention5_conv3,
-    'large': Model_config_large,
-    'large16':Model_config_large_16,
-    'large32':Model_config_large_32,
-    'attention5_conv3_large':Model_config_attention5_conv3_large
 }
 
 def parse_args():
@@ -62,9 +52,8 @@ def parse_args():
     parser.add_argument('--tcr_encoding', type=str,
                         default='./tcr_b.npz',
                         help='Path to TCR encoding file')
-    parser.add_argument('--model', type=str, default='attention5_conv3_large',
-                        choices=['default', 'attention8', 'attention_stack5', 'conv_stack3',
-                                'multi_head_attention5_conv3', 'attention5_conv3','large','large16','large32','attention5_conv3_large'],
+    parser.add_argument('--model', type=str, default='default',
+                        choices=['default'],
                         help='Model configuration to use')
     return parser.parse_args()
 
