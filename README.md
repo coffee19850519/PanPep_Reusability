@@ -32,7 +32,7 @@ This case corresponds to the experiments shown in Fig. 2 and Extended Data Fig. 
 
 ### PanPep
 
-> PanPep: [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md)
+> PanPep: [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE1.ipynb)
 
 ### Baseline Methods
 
