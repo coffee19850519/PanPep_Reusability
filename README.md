@@ -31,7 +31,7 @@ This case corresponds to the experiments shown in Fig. 2 and Extended Data Fig. 
 
 ### PanPep
 
-> PanPep: [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE1.ipynb)
+> [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE1.ipynb)
 
 ### Baseline Methods
 
@@ -47,7 +47,7 @@ This case corresponds to the experiments shown in Fig. 3 and Extended Data Fig. 
 
 ## PanPep
 
-> PanPep:[CASE2.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE2.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE2.ipynb)
+> [CASE2.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE2.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE2.ipynb)
 
 ### Baseline Methods
 
@@ -63,7 +63,7 @@ This case corresponds to the experiments shown in Fig. 4 and Extended Data Fig. 
 
 ## PanPep
 
-> PanPep:[CASE3.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE3.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE3.ipynb)
+> [CASE3.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE3.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE3.ipynb)
 
 ### Baseline Methods
 
@@ -79,7 +79,7 @@ This case corresponds to the experiments shown in Fig. 5 and Extended Data Fig. 
 
 ## PanPep
 
-> PanPep:[CASE4.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE4.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE4.ipynb)
+> [CASE4.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE4.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE4.ipynb)
 
 
 ### Baseline Methods
@@ -96,7 +96,7 @@ This case corresponds to the experiments shown in Fig. 6 and Extended Data Fig. 
 
 ## PanPep
 
-> PanPep:[CASE5.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE5.md)
+> [CASE5.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE5.md)
 
 ### Baseline Methods
 
