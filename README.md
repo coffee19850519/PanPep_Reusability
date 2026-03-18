@@ -3,7 +3,7 @@
 This epository contains the code associated with our reusability study upon the research "Pan-Peptide Meta Learning for T-Cell Receptor-Antigen Binding Recognition"
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/username/repo/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19097572.svg)](https://doi.org/10.5281/zenodo.19097572)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19097872.svg)](https://doi.org/10.5281/zenodo.19097872)
 
 ## Overview
 Our evaluations first examined PanPep’s inference- and training-level reproducibility using both the original dataset and a newly curated independent dataset. We then assessed its extendibility to peptide-TCRα and peptide-TCRαβ binding recognition, applying the same source code to these new task datasets.
@@ -123,7 +123,7 @@ Full documentation: [PanPep Hyperparameter Reproduction](https://github.com/coff
 ---
 
 ## Data and Model Weights
-The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.19097572).
+The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.19097872).
 
 ## Original Study
 
