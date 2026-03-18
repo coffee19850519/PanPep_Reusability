@@ -5,8 +5,8 @@
 This case extends PanPep to **TCRα chain** binding recognition by applying the same training pipeline with a TCRα-specific dataset. It demonstrates the framework's extendibility to a new chain type without modifying the source code.
 
 ## Data Requirements
-- **10-fold Split Training Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgArlOc0U8V5Q7Nw8XLcZ9L7AVWRhrCQLlRJV2b2jWAmZJk)
-- **Test Data and Negative TCR Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
+- **10-fold Cross-validation Data Split**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgArlOc0U8V5Q7Nw8XLcZ9L7AVWRhrCQLlRJV2b2jWAmZJk)
+- **Negative TCR Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
 - **Pre-trained Checkpoints**: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=Iuojsc)
 - **Encoding Files**:
   - [tcr_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EfbaOgcR0TVCjZMWigUshYABOa0cqxpJDZaiZBWsm0wMuw?e=9YHM4s)
