@@ -6,7 +6,7 @@ This case extends PanPep to **TCRα chain** binding recognition by applying the 
 
 ## Data Requirements
 
-- **Test Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
+- **Test Data and Negative TCR Data**: Available on [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY)
 - **Pre-trained Checkpoints**: Download from [here](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=Iuojsc)
 - **Encoding Files**:
   - [tcr_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EfbaOgcR0TVCjZMWigUshYABOa0cqxpJDZaiZBWsm0wMuw?e=9YHM4s)
@@ -116,3 +116,10 @@ For full parameter descriptions, see [CASE 1](https://github.com/coffee19850519/
 ## Metrics Calculation
 
 For sample extraction, use [`get_sample_indices_1.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_1.py) instead of [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/get_sample_indices_100.py). See [Metrics_Calculation.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md) for the full pipeline.
+
+
+## Sampled Data used in Reusability Report
+
+> The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgAQM_78USTOTrqg6NuKzKBcAX7llYCSrOqlo89T4CFAWF0?e=DxbUyG).
+
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).

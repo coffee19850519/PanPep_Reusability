@@ -3,8 +3,7 @@
 This epository contains the code associated with our reusability study upon the research "Pan-Peptide Meta Learning for T-Cell Receptor-Antigen Binding Recognition"
 
 [![License](https://img.shields.io/badge/license-MIT-blue)](https://github.com/username/repo/blob/main/LICENSE)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.18913335.svg)](https://doi.org/10.5281/zenodo.18913335)
-
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19097572.svg)](https://doi.org/10.5281/zenodo.19097572)
 
 ## Overview
 Our evaluations first examined PanPep’s inference- and training-level reproducibility using both the original dataset and a newly curated independent dataset. We then assessed its extendibility to peptide-TCRα and peptide-TCRαβ binding recognition, applying the same source code to these new task datasets.
@@ -34,8 +33,6 @@ This case corresponds to the experiments shown in Fig. 2 and Extended Data Fig. 
 
 > PanPep: [CASE1.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE1.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE1.ipynb)
 
-> The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgBQSWL8fo-gS55oFNhTFIZVAZ-VAWHWYzso0a5cvhrkB6M?e=U7B5pp).
-
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -43,8 +40,6 @@ This case corresponds to the experiments shown in Fig. 2 and Extended Data Fig. 
 ### Metrics Calculation
 
 > Metrics Calculation: [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
->
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig2.zip?csf=1&web=1&e=jptqb0).
 
 ## CASE 2: Inference Reproducibility with Independent 
 
@@ -54,8 +49,6 @@ This case corresponds to the experiments shown in Fig. 3 and Extended Data Fig. 
 
 > PanPep:[CASE2.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE2.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE2.ipynb)
 
-> The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgDhSKn_8b85Sqk-PWoWgmaeATBjASKjN_34jDyz6-n2aiY?e=YCLBJg).
-
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II \| UnifyImmun \| UniPMT \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -63,10 +56,6 @@ This case corresponds to the experiments shown in Fig. 3 and Extended Data Fig. 
 ### Metrics Calculation
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
->
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3.zip?csf=1&web=1&e=wYVPYW).
->
-> The unseen classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3_unseen.zip?csf=1&web=1&e=be1H8S).
 
 ## CASE 3: Training Reproducibility with TCRβ Extension
 
@@ -76,8 +65,6 @@ This case corresponds to the experiments shown in Fig. 4 and Extended Data Fig. 
 
 > PanPep:[CASE3.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE3.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE3.ipynb)
 
-> The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link]https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgCqmGWuw2JjQ6ZBBdbTIpGCAQwyaVNy5NzcXySe4T7lmKY?e=JDueOv).
-
 ### Baseline Methods
 
 > DLpTCR \| ERGO-II \| UnifyImmun \| Random Forest: see [Baseline Methods Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/inference/README.md)
@@ -85,8 +72,6 @@ This case corresponds to the experiments shown in Fig. 4 and Extended Data Fig. 
 ### Metrics Calculation
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
->
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig4.zip?csf=1&web=1&e=zm1RCo).
 
 ## CASE 4: Training Reproducibility with TCRα Extension
 
@@ -96,7 +81,6 @@ This case corresponds to the experiments shown in Fig. 5 and Extended Data Fig. 
 
 > PanPep:[CASE4.md](https://github.com/coffee19850519/PanPep_Reusability/blob/main/data/CASE4.md) \| [tutorial](https://github.com/coffee19850519/PanPep_Reusability/blob/main/tutorials/CASE4.ipynb)
 
-> The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgAQM_78USTOTrqg6NuKzKBcAX7llYCSrOqlo89T4CFAWF0?e=DxbUyG).
 
 ### Baseline Methods
 
@@ -105,8 +89,6 @@ This case corresponds to the experiments shown in Fig. 5 and Extended Data Fig. 
 ### Metrics Calculation
 
 > Metrics Calculation:see [Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
->
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).
 
 ## CASE 5: Training Reproducibility with TCRαβ Extension
 
@@ -123,8 +105,6 @@ This case corresponds to the experiments shown in Fig. 6 and Extended Data Fig. 
 ### Metrics Calculation
 
 > Metrics Calculation:[Metrics Calculation Manual](https://github.com/coffee19850519/PanPep_Reusability/blob/main/metric_calculation/README.md)
->
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig6.zip?csf=1&web=1&e=gT9jcX).
 
 ---
 
@@ -138,12 +118,12 @@ Full documentation: [PanPep Hyperparameter Reproduction](https://github.com/coff
 
 - [x] Update extracted classification dataset in the paper
 - [x] Update training pipeline description and related data
-- [ ] Update Jupyter notebooks
+- [x] Update tutorials with Jupyter notebooks
 
 ---
 
 ## Data and Model Weights
-The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.18913335).
+The data and model weights in this study are publicly available on [Zenodo](https://doi.org/10.5281/zenodo.19097572).
 
 ## Original Study
 
