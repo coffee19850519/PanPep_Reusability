@@ -130,7 +130,7 @@ python inference_zero_shot.py \
 
 > The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgDhSKn_8b85Sqk-PWoWgmaeATBjASKjN_34jDyz6-n2aiY?e=YCLBJg).
 
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3.zip?csf=1&web=1&e=wYVPYW).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQA85ZnPgk7eQ6A6VQOARqoYAYA3CRyPlWlFaNc_X-FUmyM?e=waCKLa).
 
-> The unseen classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig3_unseen.zip?csf=1&web=1&e=be1H8S).
+> The unseen classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQCcTYJOLYSWQYulZ0he9MceAdWm5Nq7LY1wfGH5z8hV7hM?e=alYoiw).
 
