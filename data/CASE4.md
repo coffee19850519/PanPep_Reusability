@@ -122,4 +122,4 @@ For sample extraction, use [`get_sample_indices_1.py`](https://github.com/coffee
 
 > The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgAQM_78USTOTrqg6NuKzKBcAX7llYCSrOqlo89T4CFAWF0?e=DxbUyG).
 
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig5.zip?csf=1&web=1&e=J8eYuP).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQAS2W0JXU25R4OQsyiQXabhAdiNIDmtBy1N7Grfgedajyk?e=iQbK0t).
