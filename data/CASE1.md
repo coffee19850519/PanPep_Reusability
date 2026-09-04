@@ -165,4 +165,4 @@ Use [`get_sample_indices_100.py`](https://github.com/coffee19850519/PanPep_Reusa
 
 > The sampled data used for adaptation in both majority and few-shot settings can be downloaded from the following [link](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgBQSWL8fo-gS55oFNhTFIZVAZ-VAWHWYzso0a5cvhrkB6M?e=U7B5pp).
 
-> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/r/personal/hefe_umsystem_edu/Documents/Panpep%20reusability%20report/data/classification/fig2.zip?csf=1&web=1&e=jptqb0).
+> The classification results under Background Drawing in the Reusability Report were generated using the negative sampling data available at the following [link](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQAVTro77BJDT4yulW2IClygAWkZfy5BK5i_vpORulhhc9U?e=XauRwr).
