@@ -11,7 +11,7 @@ Our evaluations first examined PanPep’s inference- and training-level reproduc
 
 ![Fig1](https://github.com/coffee19850519/PanPep_Reusability/blob/main/img/Fig1.jpg)
 
-### :fire: Update: Experiment Reproduction Table
+### :fire: Update: Reproduction Resource by Case
 
 > **Resources for reproducing the reported results:** The table below lists the training datasets, adaptation samples, test datasets, negative TCR controls, background-drawing negative-sampling data, model weights, and encoding files used for each experimental case.
 
@@ -23,7 +23,7 @@ Our evaluations first examined PanPep’s inference- and training-level reproduc
 | [CASE 4](data/CASE4.md) | Training reproducibility with the TCRα extension | [10-fold cross-validation data split](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgArlOc0U8V5Q7Nw8XLcZ9L7AVWRhrCQLlRJV2b2jWAmZJk) | [Majority/few-shot adaptation samples](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgAQM_78USTOTrqg6NuKzKBcAX7llYCSrOqlo89T4CFAWF0?e=DxbUyG) | [10-fold cross-validation data split](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgArlOc0U8V5Q7Nw8XLcZ9L7AVWRhrCQLlRJV2b2jWAmZJk) | [Negative TCR data](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EixVbgsKPD5BuDQP566AvR8BiPXqG85FkCCshSTexHLQgw?e=Jry9LY) | [Background-drawing negative samples](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQAS2W0JXU25R4OQsyiQXabhAdiNIDmtBy1N7Grfgedajyk?e=iQbK0t) | [Pre-trained checkpoints](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=Iuojsc) | [tcr_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EfbaOgcR0TVCjZMWigUshYABOa0cqxpJDZaiZBWsm0wMuw?e=9YHM4s)<br>[peptide_a.npz](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/EW2_VBo_t7RAs-ysGbkZMacBX_PTniASmuROxwpVjmt_pw?e=dASilC) |
 | [CASE 5](data/CASE5.md) | Training reproducibility with the paired TCRαβ extension | [TCRβ training data (CASE 3)](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgDljGvsUg7BQoCfyv6jj0ZlAcmJPmOsdn37KLyJyKzLdWQ?e=tc7ABq)<br>[TCRα training data (CASE 4)](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/IgArlOc0U8V5Q7Nw8XLcZ9L7AVWRhrCQLlRJV2b2jWAmZJk) | — | [Test data](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ei2Ef8zmUGBKqh8H0Vhrl9QBOGfwUjV7Oead3UVlV7kVKw?e=NC6JMl) | — | [Background-drawing negative samples](https://mailmissouri-my.sharepoint.com/:u:/g/personal/hefe_umsystem_edu/IQBMurKxVCPBQYjtu36vmrK-AVbx31kGFR2udfs1rt4AOyA?e=2gDnUL) | [Alpha chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/Ek35RWplZ-VIkmqhVB6pM_gB8XLzCRfXWGNOlDCIIG5pcA?e=oXLckH)<br>[Beta chain checkpoints](https://mailmissouri-my.sharepoint.com/:f:/g/personal/hefe_umsystem_edu/EsHEqqK-ECBAqQo1_f97IVcBaL1WoQ2euN9Xm497npseOA?e=86CUNb) | [tcr_ab.npz](inference/PanPep_Weight_Inference/tcr_ab.npz)<br>[peptide_ab.npz](inference/PanPep_Weight_Inference/peptide_ab.npz) |
 
-### :fire: Update: Zenodo Resources by Reproduction Case
+### :fire: Update: Zenodo Resources by Case
 
 > **Zenodo resource map:** This table maps each reproduction case to the core datasets and model weights deposited in [https://doi.org/10.5281/zenodo.19097872](https://doi.org/10.5281/zenodo.19097872). Within each archive, the required file or directory is listed beneath the archive name.
 
